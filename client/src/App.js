@@ -1,5 +1,5 @@
 import "./App.css";
-import SignIn from "./component/SignIn";
+import SignIn from "./containers/SignIn";
 
 function App() {
   return <SignIn />;

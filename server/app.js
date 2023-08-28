@@ -1,6 +1,11 @@
 var express = require("express");
 const cors = require("cors");
 var app = express();
+require("dotenv").config();
+console.log(
+  "Your environment variable TWILIO_ACCOUNT_SID has the value: ",
+  process.env.TWILIO_ACCOUNT_SID
+);
 
 // Enable CORS for all routes
 app.use(cors());
@@ -12,8 +17,10 @@ app.get("/validate-phone-number", (req, res) => {
   // Download the helper library from https://www.twilio.com/docs/node/install
   // Find your Account SID and Auth Token at twilio.com/console
   // and set the environment variables. See http://twil.io/secure
-  const accountSid = "AC3578061bb4520afcf68810a41fb9bc20";
-  const authToken = "b3c8464a5321f7033913dc153d50c367";
+  // const accountSid = "AC3578061bb4520afcf68810a41fb9bc20";
+  // const authToken = "b3c8464a5321f7033913dc153d50c367";
+  const accountSid = process.env.TWILIO_ACCOUNT_SID;
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
   const client = require("twilio")(accountSid, authToken);
 
   client.lookups.v2
