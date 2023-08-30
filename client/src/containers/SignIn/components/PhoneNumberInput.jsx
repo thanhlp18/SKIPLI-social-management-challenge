@@ -1,11 +1,13 @@
 import "intl-tel-input/build/css/intlTelInput.css";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ReactIntlTelInput from "react-intl-tel-input-v2";
 import { validatePhoneNumberApi } from "../../../api/loginApi";
 import "./PhoneNumberInput.css";
 import BtnLoading from "../../../components/BtnLoading";
 import BtnPrimary from "../../../components/BtnPrimary";
-const SignIn = () => {
+
+const SignIn = (props) => {
+  const { handleValidPhoneNumber } = props;
   const inputTelProps = {
     placeholder: "Phone number",
     id: "tel",
@@ -22,14 +24,15 @@ const SignIn = () => {
   };
 
   // ------------------ // State
+  const [isLoading, setIsLoading] = useState(false);
   const [phoneNumberValue, setPhoneNumberValue] = useState({
     iso2: "vn",
     dialCode: "+84",
     phone: "+84",
   });
   const [phoneNumberInstance, setPhoneNumberInstance] = useState();
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState();
+  const [error, setError] = useState(null);
+  const [formSubmitData, setFormSubmitData] = useState();
 
   // ------------------ // Function handle logic
   const onChange = (value) => {
@@ -49,10 +52,9 @@ const SignIn = () => {
     setPhoneNumberValue(newPhoneNumberValue);
   };
 
-  const handleSubmitPhoneNumber = (e) => {
+  const handleSubmitPhoneNumber = async (e) => {
     setIsLoading(true);
     e.preventDefault();
-    console.log("CALL API", phoneNumberValue);
     const data = {
       phone: phoneNumberValue.phone,
       countryCode: phoneNumberValue.iso2.toUpperCase(),
@@ -80,10 +82,21 @@ const SignIn = () => {
       //     "url": "http://lookups.twilio.com/v2/PhoneNumbers/%2084?CountryCode=VN"
       // }
       setError(data.validationErrors[0]);
-      console.log(data);
+      setFormSubmitData({
+        phoneNumberNationFormat: data.nationalFormat,
+        phoneNumber: data.phoneNumber,
+        error: data.validationErrors[0],
+      });
       setIsLoading(false);
     });
   };
+
+  useEffect(() => {
+    if (error === undefined) {
+      console.log("NULL pass", error);
+      handleValidPhoneNumber(formSubmitData);
+    }
+  }, [error]);
 
   return (
     <form className="space-y-6" onSubmit={handleSubmitPhoneNumber}>
