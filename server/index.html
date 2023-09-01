@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Facebook Login Example</title>
+  </head>
+  <body>
+    <h1>Welcome to My App</h1>
+    <p>Click the button below to log in with Facebook:</p>
+    <button id="loginWithFacebook">Log In with Facebook</button>
+
+    <script>
+      // Replace these with your actual Facebook App values
+      const appId = "1943492222674073";
+      const redirectUri = "http://localhost:3001/loginFacebook";
+
+      // Attach a click event listener to the login button
+      document
+        .getElementById("loginWithFacebook")
+        .addEventListener("click", () => {
+          // Construct the Facebook login URL
+          const loginUrl = `https://www.facebook.com/v17.0/dialog/oauth?client_id=${appId}&redirect_uri=${redirectUri}&scope=email`;
+
+          // Redirect the user to the Facebook login page
+          window.location.href = loginUrl;
+        });
+    </script>
+  </body>
+</html>

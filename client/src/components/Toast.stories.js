@@ -1,8 +1,8 @@
-import Toasts from "./Toasts";
+import Toast from "./Toast";
 
 export default {
-  title: "Global/Toasts",
-  component: Toasts,
+  title: "Global/Toast",
+  component: Toast,
   // ...
 };
 
@@ -10,5 +10,6 @@ export const success = {
   args: {
     type: "success",
     description: "OTP has been sent to you!",
+    className: "",
   },
 };

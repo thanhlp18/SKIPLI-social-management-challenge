@@ -1,16 +1,48 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import OtpInput from "react-otp-input";
 import { useNavigate } from "react-router-dom";
+import { validateAccessCode } from "../../../api/loginApi";
+import Toast from "../../../components/Toast";
+import toast, { Toaster } from "react-hot-toast";
 
 function OTPInput(props) {
   const { phoneNumber, handleOTP, editPhoneNumber } = props;
   const [otp, setOtp] = useState("");
+  const [toastData, setToastData] = useState(undefined);
   const navigate = useNavigate();
+  // If user want to change their phone number, navigate to input phone number page
   const handleEditPhoneNumber = () => {
     navigate("/login");
     editPhoneNumber(false);
   };
+
+  const handleSubmitOTP = async (e) => {
+    e.preventDefault();
+    if (otp.length !== 6) {
+      setToastData({
+        ...toastData,
+        type: "error",
+        description: "Please enter the OTP!",
+      });
+    } else {
+      setToastData({
+        ...toastData,
+        type: "success",
+        description: "",
+      });
+    }
+  };
+
+  // Pass the data to CONTAINER to processing
+  useEffect(() => {
+    // toastData is a state contain the status (error, success) and (status description) of otp input
+    if (otp.length === 6) {
+      handleOTP(otp, toastData);
+    } else {
+      handleOTP(otp, toastData);
+    }
+  }, [toastData]);
 
   return (
     <>
@@ -33,7 +65,7 @@ function OTPInput(props) {
           </span>
         </div>
       </div>
-      <form className="mt-3 " action="#" method="POST">
+      <form className="mt-3" onSubmit={handleSubmitOTP}>
         {/* <div>
           <label
             htmlFor="password"

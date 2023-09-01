@@ -1,20 +1,20 @@
 // --------------
 // Start express config
-var express = require("express");
+const express = require("express");
 const cors = require("cors");
-var app = express();
+const app = express();
 require("dotenv").config();
-var multer = require("multer");
-var upload = multer();
+const multer = require("multer");
+const upload = multer();
+const bodyParser = require("body-parser");
+const axios = require("axios");
 // End express config
+const firebase = require("./firebase.js")();
 
 // Start firebase config
 const { initializeApp } = require("firebase/app");
 const {
   getFirestore,
-  collection,
-  getDocs,
-  addDoc,
   setDoc,
   getDoc,
   doc,
@@ -26,24 +26,19 @@ const firebaseStore = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseStore);
 // End firebase config
 
-// Enable CORS for all routes
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(upload.array());
 app.use(express.static("public"));
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
 
 // -------------- method
 //Start validate phone number when use input
 app.get("/validate-phone-number", (req, res) => {
   const phoneNumber = req.query.phoneNumber;
   const countryCode = req.query.countryCode;
-  console.log("PHONE NUMBER CHECK:", countryCode);
-  // Download the helper library from https://www.twilio.com/docs/node/install
-  // Find your Account SID and Auth Token at twilio.com/console
-  // and set the environment variables. See http://twil.io/secure
-  // const accountSid = "AC3578061bb4520afcf68810a41fb9bc20";
-  // const authToken = "b3c8464a5321f7033913dc153d50c367";
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
   const authToken = process.env.TWILIO_AUTH_TOKEN;
   const client = require("twilio")(accountSid, authToken);
@@ -88,7 +83,6 @@ app.post("/generate-access-code", async (req, res) => {
   }
 });
 
-// Validate access code
 // Save the access code to the phone number in Firebase Realtime Database
 app.post("/validate-access-code", async (req, res) => {
   const phoneNumber = req.body.phoneNumber;
@@ -114,7 +108,84 @@ app.post("/validate-access-code", async (req, res) => {
     console.error("Error adding document: ", e);
   }
 });
+// END OTP handle
 
-app.listen(3001, () => {
-  console.log("Server running on port 3001");
+// // START facebook login handle
+
+app.post("/loginFacebook", async (req, res) => {
+  console.log(req.body);
+  const accessToken = req.body.accessToken;
+  const phoneNumber = req.body.phoneNumber;
+  const provider = req.body.provider;
+  const timeStamp = serverTimestamp();
+
+  const social = {
+    [provider]: {
+      accessToken: accessToken,
+      expirationTime: timeStamp,
+    },
+  };
+
+  // addDoc(collection(db, "users")
+  try {
+    const userRef = await updateDoc(doc(db, "users", phoneNumber), {
+      [provider]: {
+        accessToken: accessToken,
+        expirationTime: timeStamp,
+      },
+    }).then(() => {
+      res.json({ success: true }); // Send the data back to the client
+    });
+  } catch (e) {
+    console.error("Error adding document: ");
+  }
+});
+// // Facebook App credentials
+// const facebookAppId = process.env.FACEBOOK_APP_API;
+// const facebookAppSecret = process.env.FACEBOOK_APP_SECRET;
+// const redirectUri = process.env.REDIRECT_URL;
+
+// app.get("/login-facebook", async (req, res) => {
+//   const code = req.query.code;
+
+//   // Send the validate code to client
+//   // res.send(code);
+//   axios
+//     .get("https://graph.facebook.com/v17.0/oauth/access_token", {
+//       params: {
+//         client_id: facebookAppId,
+//         redirect_uri: redirectUri,
+//         client_secret: facebookAppSecret,
+//         code: code,
+//       },
+//     })
+//     .then((response) => {
+//       const responseData = response.data;
+
+//       if (responseData.error) {
+//         // Handle Facebook API error
+//         console.error("Facebook API error:", responseData.error);
+//         res.status(500).json({ error: "Facebook API error" });
+//       } else if (responseData.access_token) {
+//         // Access token successfully received
+//         console.log("Access Token:", responseData.access_token);
+//         res.json({ success: true, access_token: responseData.access_token });
+//       } else {
+//         // Handle unexpected response
+//         console.error("Unexpected response from Facebook");
+//         res.status(500).json({ error: "Unexpected response from Facebook" });
+//       }
+//     })
+//     .catch((error) => {
+//       console.error("Facebook login error:", error);
+//       res.status(500).json({ error: "Failed to log in with Facebook" });
+//     });
+// });
+// //END facebook login handle
+
+// Start the server
+const port = process.env.PORT || 3001;
+
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
 });

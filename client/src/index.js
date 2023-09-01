@@ -3,25 +3,26 @@ import ReactDOM from "react-dom/client";
 import "./index.css";
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+
 import "./index.css";
 import SignIn from "./containers/SignIn";
+import Dashboard from "./containers/Dashboard/Dashboard";
+import { ThemeProvider } from "@material-tailwind/react";
 
-const router = createBrowserRouter([
-  {
-    path: "/",
-    element: <App />,
-  },
-  {
-    path: "/login",
-    element: <SignIn />,
-  },
-]);
+import { CookiesProvider } from "react-cookie";
+import store from "./app/store";
+import { Provider } from "react-redux";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+    <ThemeProvider>
+      <CookiesProvider>
+        <Provider store={store}>
+          <App />
+        </Provider>
+      </CookiesProvider>
+    </ThemeProvider>
   </React.StrictMode>
 );
 
