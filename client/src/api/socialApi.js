@@ -32,7 +32,7 @@ export const getPostFacebook = (phoneNumber) => {
   return new Promise((resolve, reject) => {
     // Create a JSON object with the phone number
 
-    fetch("http://localhost:3001/get-facebook-posts", {
+    fetch("http://localhost:3001/get-facebook-page-posts", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -54,6 +54,25 @@ export const getPostFacebook = (phoneNumber) => {
         reject(error);
       });
   });
+};
+
+export const createFacebookPost = async (image, caption, phoneNumber) => {
+  console.log(caption);
+  const formData = new FormData();
+  formData.append("message", caption);
+  formData.append("image", image);
+  formData.append("phoneNumber", "+84795442122");
+
+  try {
+    const response = await fetch("http://localhost:3001/create-facebook-post", {
+      method: "POST",
+      body: formData,
+    });
+    const status = await response.json();
+    return status;
+  } catch (error) {
+    console.error("Error:", error);
+  }
 };
 
 export const createFavoritePostApi = (phoneNumber, social, postId) => {

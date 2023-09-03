@@ -98,6 +98,7 @@ const LoginSocialFacebook = ({
 
   const handleResponse = useCallback(
     (response) => {
+      console.log(response);
       if (response.authResponse) {
         const phoneNumber = JSON.parse(
           localStorage.getItem("skipliAccount")

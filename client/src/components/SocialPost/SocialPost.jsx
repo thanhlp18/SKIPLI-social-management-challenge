@@ -21,6 +21,7 @@ import {
 import clsx from "clsx";
 import { useState } from "react";
 import IconGroup from "./components/IconGroup";
+import noImageToDisplayIcon from "../../assets/no-image-icon-15.png";
 
 // SocialPost.propTypes = {
 //   media: PropTypes.element,
@@ -33,8 +34,7 @@ export default function SocialPost(props) {
   const {
     media,
     copy,
-    social,
-    user,
+    pageData,
     className,
     postId,
     isFavorite,
@@ -140,7 +140,7 @@ export default function SocialPost(props) {
           <Tooltip
             content={
               <span className="ps-1   font-normal">
-                {social} | @{user.username}
+                {pageData.social} page | @{pageData.username}
               </span>
             }
             animate={{
@@ -153,7 +153,7 @@ export default function SocialPost(props) {
               color="blue-gray"
               className="cursor-pointer p-2 text-xs font-medium text-black"
             >
-              {user.fullname}
+              {pageData.name}
             </Typography>
           </Tooltip>
           {/* <CollapseBtn
@@ -163,13 +163,17 @@ export default function SocialPost(props) {
             cardClass={"border border-gray-50 rounded-none"}
           /> */}
         </div>
-        {media ? media : ""}
+        {media ? (
+          media
+        ) : (
+          <img src={noImageToDisplayIcon} alt="ui/ux review check" />
+        )}
       </CardHeader>
       <CardBody className="px-4 py-2">
         {/* Start social reaction  */}
         <div className="flex  items-center justify-between ">
           <div className="flex items-center justify-start sm:gap-4 lg:gap-2 xl:gap-3">
-            {socialReactions[social].map((ele, index) => {
+            {socialReactions[pageData.social].map((ele, index) => {
               return (
                 <IconGroup
                   icon={ele.icon}
@@ -184,7 +188,7 @@ export default function SocialPost(props) {
           <Button
             variant="text"
             className="p-0"
-            onClick={() => onClickFavorite(postId, social)}
+            onClick={() => onClickFavorite(postId, pageData.social)}
           >
             <IconGroup
               icon={
@@ -203,7 +207,14 @@ export default function SocialPost(props) {
 
           {/* Start social post content */}
         </div>
-        <p className="line-clamp-5 text-sm text-gray-500">{copy ? copy : ""}</p>
+        <p
+          className={clsx(
+            "line-clamp-5 text-sm ",
+            copy ? "text-gray-900" : "text-gray-300"
+          )}
+        >
+          {copy ? copy : "No caption to display!"}
+        </p>
         {/* End social post content */}
       </CardBody>
       {/* <CardFooter className="pt-0">fads</CardFooter> */}

@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { useDispatch } from "react-redux";
 import { createFavoritePostApi, getPostFacebook } from "../../../api/socialApi";
 import SocialPost from "../../../components/SocialPost/SocialPost";
 import NavbarDashboard from "./Navbar/Navbar";
 
 function PostList(props) {
   const [socialPosts, setSocialPost] = useState([]);
-  const [userData, setUserData] = useState({ username: "", fullname: "" });
+  const [pageData, setPageData] = useState({ username: "", fullname: "" });
 
   const skipliAccount = JSON.parse(localStorage.getItem("skipliAccount"));
 
@@ -17,9 +16,10 @@ function PostList(props) {
           const response = await getPostFacebook(skipliAccount.userPhoneNumber);
           console.log("DATA:", response.posts);
           setSocialPost(response.posts);
-          setUserData({
-            username: response.userData.id,
-            fullname: response.userData.name,
+          setPageData({
+            social: response.pageData.social,
+            username: response.pageData.id,
+            name: response.pageData.name,
           });
         } catch (error) {
           console.error("Error fetching data:", error);
@@ -43,14 +43,18 @@ function PostList(props) {
         {/* <div className=" xs:columns-1 gap-4 sm:columns-2 lg:columns-3 xl:columns-4"> */}
         {socialPosts.map((post, index) => (
           <SocialPost
-            user={userData}
+            pageData={pageData}
             media={
               post?.full_picture && (
-                <img src={post.full_picture} alt="ui/ux review check" />
+                <img
+                  src={post.full_picture}
+                  // className="h-60 w-full object-cover object-center transition-all duration-300 ease-out hover:object-contain"
+                  className=" h-60 w-full object-cover object-center transition-all duration-300  ease-out  hover:bg-gray-200 hover:object-contain"
+                  alt={`${pageData.social} social post`}
+                />
               )
             }
-            copy={post.description || post.caption}
-            social={"facebook"}
+            copy={post.description || post.caption || post.message}
             key={`social-post-${index}`}
             handleClickFavorite={handleClickFavorite}
             postId={post.id}

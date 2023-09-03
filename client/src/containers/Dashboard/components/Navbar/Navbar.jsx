@@ -9,6 +9,8 @@ import {
 import CollapseBtn from "../../../../components/CollapseBtn/CollapseBtn";
 import { useState } from "react";
 import SociaLoginButton from "./SocialLoginButton";
+import { SocialPostModal } from "../../../../components/SocialPostModal/SocialPostModal";
+import FacebookPostForm from "../../../../components/SocialPostModal/SocialPostModal copy";
 
 export default function NavbarDashboard() {
   const [socialAccount, setSocialAccount] = useState([]);
@@ -88,7 +90,9 @@ export default function NavbarDashboard() {
           </CollapseBtn>
         </div>
         <div className="ml-auto ">
-          <Button className="rounded-md">Create A Post</Button>
+          {/* <Button className="rounded-md">Create A Post</Button> */}
+          {/* <SocialPostModal isOpen={true} /> */}
+          <FacebookPostForm />
         </div>
       </div>
     </Navbar>

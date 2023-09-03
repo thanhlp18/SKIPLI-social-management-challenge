@@ -19,13 +19,13 @@ export default function Sidebar() {
   const navagte = useNavigate();
 
   return (
-    <Card className="shadow-blue-gray-900/5 h-screen w-full rounded-none border border-gray-200 p-4 shadow-none">
+    <Card className="shadow-blue-gray-900/5 xs:p-0 h-screen w-full rounded-none border border-gray-200 p-4 shadow-none sm:overflow-hidden sm:p-1">
       <div className="mb-2 p-4">
         <Typography variant="h5" color="blue-gray">
           Skipli Project
         </Typography>
       </div>
-      <List>
+      <List className=" min-w-[200px]">
         <ListItem
           className={
             location.pathname === "/posts" ? "bg-gray-900 text-white" : ""

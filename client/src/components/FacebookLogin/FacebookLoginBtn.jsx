@@ -33,7 +33,9 @@ const FacebookLoginBtn = (props) => {
   return (
     <LoginSocialFacebook
       isOnlyGetToken={false}
-      scope={"public_profile,user_posts"}
+      scope={
+        "public_profile,user_posts,pages_manage_cta,pages_show_list,pages_read_engagement,pages_manage_metadata,pages_read_user_content,pages_manage_ads,pages_manage_posts,pages_manage_engagement"
+      }
       appId={process.env.REACT_APP_FACEBOOK_APP_API || ""}
       onLoginStart={onLoginStart}
       onResolve={({ provider, data }) => {

@@ -5,9 +5,11 @@ const cors = require("cors");
 const app = express();
 require("dotenv").config();
 const multer = require("multer");
-const upload = multer();
+const upload = multer({ dest: "uploads/" });
 const bodyParser = require("body-parser");
 const axios = require("axios");
+const fs = require("fs");
+const FormData = require("form-data");
 // End express config
 const firebase = require("./firebase.js")();
 
@@ -31,7 +33,6 @@ const db = getFirestore(firebaseStore);
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(upload.array());
 app.use(express.static("public"));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
@@ -152,7 +153,7 @@ app.post("/loginFacebook", async (req, res) => {
 });
 
 // Get facebook posts
-app.post("/get-facebook-posts", async (red, res) => {
+app.post("/get-personal-facebook-posts", async (red, res) => {
   // Receive the phone number from user, get access token from database
   const phoneNumber = red.body.phoneNumber;
 
@@ -222,6 +223,107 @@ app.post("/get-facebook-posts", async (red, res) => {
   }
 });
 
+app.post("/get-facebook-page-posts", async (red, res) => {
+  // Receive the phone number from user, get access token from database
+  const phoneNumber = red.body.phoneNumber;
+
+  // Initial variable
+  var pagePostData = [];
+  var favoritePostData = [];
+  var userData = [];
+  var userAccessToken = "";
+  var userID = "";
+  var pageData = { name: "", access_token: "", id: "" };
+
+  // A function to check wherether the post is user's favorite, if favorite add ? {isFavorite: true} {isFavorite: false}
+  function addIsFavoriteProperty(arrayA, arrayB) {
+    const idSetB = new Set(arrayB);
+    for (const obj of arrayA) {
+      if (idSetB.has(obj.id)) {
+        obj.isFavorite = true;
+      } else {
+        obj.isFavorite = false;
+      }
+    }
+  }
+
+  // Connect to firebase
+  try {
+    const usersRef = doc(db, "users", phoneNumber);
+    const userSnap = await getDoc(usersRef);
+    userAccessToken = userSnap.data().facebook.auth.accessToken;
+    userID = userSnap.data().facebook.auth.userID;
+  } catch (err) {
+    console.error("Fail to connect the database: ", err);
+  }
+
+  // GET favorite post id
+  try {
+    const social = "facebook";
+    if (userSnap.exists()) {
+      favoritePostData = await userSnap.data()[social].favorite_social_post;
+      if (!favoritePostData) favoritePostData = [];
+    }
+  } catch (error) {
+    console.log("Can't get favorite posts from server: ", error);
+  }
+
+  // GET page access token
+  try {
+    console.log("START GET PAGE ACCESS TOKEN");
+    const response = await fetch(
+      `https://graph.facebook.com/${userID}/accounts?fields=name,access_token&access_token=${userAccessToken}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const res = await response.json();
+    console.log("END GET PAGE ACCESS TOKEN", res);
+    pageData = {
+      name: res.data[0].name,
+      access_token: res.data[0].access_token,
+      id: res.data[0].id,
+    };
+    console.log("END GET PAGE ACCESS TOKEN", pageData);
+  } catch (e) {
+    console.error("Error get page access token: ", error);
+  }
+
+  // GET page posts
+  try {
+    const response = await fetch(
+      `https://graph.facebook.com/${pageData.id}/feed?fields=message,created_time,id,permalink_url,full_picture&access_token=${pageData.access_token}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    //Array[{id, message, full picture, isFavorite, created_time, permalink_url},...]
+    const res = await response.json();
+    pagePostData = res.data;
+  } catch (e) {
+    console.log("Error get page post: ", error);
+  }
+
+  // ADD isFavorite property to post
+  try {
+    addIsFavoriteProperty(pagePostData, favoritePostData);
+    console.log("COMPLETE ADD isFavorite");
+    res.json({
+      pageData: { id: pageData.id, name: pageData.name, social: "facebook" },
+      posts: pagePostData,
+    }); //Array[{id, message, full picture, description, isFavorite},...]
+  } catch (error) {
+    console.log("Can' add favorite property: ", error);
+  }
+});
+
 // CREATE the favorite post
 app.post("/create-favorite-post", async (red, res) => {
   const phoneNumber = red.body.phoneNumber;
@@ -281,6 +383,82 @@ app.get("/get-favorite-posts", async (req, res) => {
   } catch (error) {
     console.error("Error retrieving Facebook data:", error);
     res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// CREATE facebook post
+app.post("/create-facebook-post", upload.single("image"), async (req, res) => {
+  var userAccessToken = "";
+  var userID = "";
+  try {
+    const { phoneNumber } = req.body;
+    console.log("PHONE NUMBER: ", phoneNumber);
+    // Connect to firebase
+    const usersRef = doc(db, "users", phoneNumber);
+    const userSnap = await getDoc(usersRef);
+
+    try {
+      // GET userAccessToken and userID from database
+      userAccessToken = userSnap.data().facebook.auth.accessToken;
+      userID = userSnap.data().facebook.auth.userID;
+    } catch (err) {
+      console.log("Can not get the user auth from firebase: ", err);
+    }
+  } catch (err) {
+    console.log("Can not connect to the firebase: ", err);
+  }
+
+  // GET pageAccessToken and page ID
+  var pageAccessToken = "";
+  var pageID = "";
+
+  try {
+    const pageAuthRes = await fetch(
+      `https://graph.facebook.com/${userID}/accounts?fields=access_token&access_token=${userAccessToken}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    const pageAuthData = await pageAuthRes.json();
+    pageAccessToken = pageAuthData.data[0].access_token;
+    pageID = pageAuthData.data[0].id;
+  } catch (err) {
+    console.log("ERROR: Can not get pageAccessToken and page Id: ", err);
+  }
+
+  try {
+    // Extract the message and image file from the request
+    const { message } = req.body;
+    const imageFile = req.file;
+
+    // Create a FormData object to send as a multi-part request
+    const formData = new FormData();
+
+    formData.append("message", message);
+    formData.append("image", fs.createReadStream(imageFile.path));
+    formData.append("access_token", pageAccessToken);
+
+    // Define the headers manually
+    const headers = {
+      ...formData.getHeaders(),
+    };
+    // Make a POST request to upload the image to Facebook
+    const uploadResponse = await axios.post(
+      `https://graph.facebook.com/v17.0/${pageID}/photos`,
+      formData,
+      {
+        headers: headers,
+      }
+    );
+    // Respond with the Facebook post ID
+    res.json({ success: true });
+  } catch (error) {
+    // Handle errors
+    console.log("Error:", error.response ? error.response.data : error.message);
+    res.status(500).json({ success: false });
   }
 });
 //END Facebook API handle
