@@ -20,7 +20,7 @@ const {
   doc,
   serverTimestamp,
   updateDoc,
-} = require("firebase/firestore/lite");
+} = require("firebase/firestore");
 const firebaseConfig = require("./.firebaseConfig/firebaseConfig.json");
 const { defineBoolean } = require("firebase-functions/params");
 const { error } = require("firebase-functions/logger");
@@ -115,7 +115,6 @@ app.post("/validate-access-code", async (req, res) => {
 // END OTP handle
 
 //START Facebook API handle
-
 // Facebook login handle
 app.post("/loginFacebook", async (req, res) => {
   // console.log(req.body);
@@ -151,29 +150,6 @@ app.post("/loginFacebook", async (req, res) => {
     console.error("Error adding document: ", error);
   }
 });
-
-// Get login data in server
-// app.get("/getFacebookLoginData/:userPhoneNumber", async (req, res) => {
-//   const userPhoneNumber = req.params.userPhoneNumber;
-//   console.log(userPhoneNumber);
-
-//   try {
-//     // Access Firestore and retrieve the
-//     const usesRef = doc(db, "users", userPhoneNumber);
-//     const useSnap = await getDoc(usesRef);
-//     console.log(useSnap.data());
-//     if (useSnap.exists()) {
-//       const facebookData = await useSnap.data().facebook.auth;
-//       res.json(facebookData);
-//     } else {
-//       // docSnap.data() will be undefined in this case
-//       console.log("Can't get data information from database");
-//     }
-//   } catch (error) {
-//     console.error("Error retrieving Facebook data:", error);
-//     res.status(500).json({ error: "Internal server error" });
-//   }
-// });
 
 // Get facebook posts
 app.post("/get-facebook-posts", async (red, res) => {
@@ -307,6 +283,130 @@ app.get("/get-favorite-posts", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+//END Facebook API handle
+
+//START Account api
+// GET accounts api
+app.post("/get-social-accounts", async (red, res) => {
+  const phoneNumber = red.body.phoneNumber;
+  console.log("USER PHONE NUMBER: ", phoneNumber);
+  var accountsData = {
+    facebook: {
+      socialPlaform: "facebook",
+      isLogin: false,
+      name: "",
+      id: "",
+      loginExpire: "",
+      profileImage: "",
+    },
+    instagram: {
+      socialPlaform: "instagram",
+      isLogin: false,
+      name: "",
+      id: "",
+      loginExpire: "",
+      profileImage: "",
+    },
+    twitter: {
+      socialPlaform: "twitter",
+      isLogin: false,
+      name: "",
+      id: "",
+      loginExpire: "",
+      profileImage: "",
+    },
+  };
+
+  try {
+    // Connect to database
+    const usersRef = doc(db, "users", phoneNumber);
+    const docSnap = await getDoc(usersRef);
+    if (docSnap) console.log("---DATA BASE CONNECTED---");
+    // Get social account data from firebase
+    if (docSnap.exists()) {
+      var facebookAccount = docSnap.data().facebook;
+      var instagramAccount = docSnap.data().instagram;
+      var twitterAccount = docSnap.data().twitter;
+      try {
+        // Get facebook data from firebase
+        const facebookAccountAuth = facebookAccount.auth;
+        accountsData = {
+          ...accountsData,
+          facebook: {
+            isLogin: true,
+            name: "",
+            id: facebookAccountAuth.userID,
+            loginExpire: facebookAccountAuth.data_access_expiration_time,
+            profileImage: "",
+          },
+        };
+        console.log(
+          "GET FACEBOOK DATA SUCCESSFULLY! ",
+          facebookAccountAuth.accessToken
+        );
+        // Get facebook profile image from facebook api
+        try {
+          const userPublicInformationRes = await fetch(
+            `https://graph.facebook.com/v17.0/me?fields=id%2Cname%2Cpicture&access_token=${facebookAccountAuth.accessToken}`
+          );
+          const userPublicInformation = await userPublicInformationRes.json();
+          accountsData = {
+            ...accountsData,
+            facebook: {
+              socialPlaform: "facebook",
+              isLogin: true,
+              name: userPublicInformation.name,
+              id: facebookAccountAuth.userID,
+              loginExpire: facebookAccountAuth.data_access_expiration_time,
+              profileImage: userPublicInformation.picture.data.url,
+            },
+          };
+        } catch (err) {
+          console.error("Can not get user profile image: ", err);
+        }
+      } catch (error) {
+        console.error("User does not login to facebook account!");
+      }
+      try {
+        const instagramAccountAuth = instagramAccount.auth;
+        accountsData = {
+          ...accountsData,
+          facebook: {
+            isLogin: true,
+            name: "",
+            id: instagramAccountAuth.userID,
+            loginExpire: instagramAccountAuth.data_access_expiration_time,
+            profileImage: "",
+          },
+        };
+      } catch (error) {
+        console.error("User does not login to instagram account!");
+      }
+      try {
+        const twitterAccountAuth = twitterAccount.auth;
+        accountsData = {
+          ...accountsData,
+          facebook: {
+            isLogin: true,
+            name: "",
+            id: twitterAccountAuth.userID,
+            loginExpire: twitterAccountAuth.data_access_expiration_time,
+            profileImage: "",
+          },
+        };
+      } catch (error) {
+        console.error("User does not login to twitter account!");
+      }
+    } else {
+      throw Error("Phon number isn't valid!");
+    }
+
+    res.json(Object.values(accountsData));
+  } catch (e) {
+    console.error("Can't get social account data: ", e);
+  }
+});
+//EDN Account api
 
 // Start the server
 const port = process.env.PORT || 3001;

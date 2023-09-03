@@ -74,3 +74,30 @@ export const createFavoritePostApi = (phoneNumber, social, postId) => {
     return response.json();
   });
 };
+
+export const getSocialAccount = (phoneNumber) => {
+  return fetch("http://localhost:3001/get-social-accounts", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      phoneNumber: phoneNumber,
+    }), // Send the JSON data in the request body
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      return response.json();
+    })
+    .then((data) => {
+      return data;
+    })
+    .catch((error) => {
+      // Handle errors
+      console.error(error);
+      throw error;
+    });
+};
