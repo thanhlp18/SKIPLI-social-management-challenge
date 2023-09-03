@@ -226,6 +226,8 @@ app.post("/get-personal-facebook-posts", async (red, res) => {
 app.post("/get-facebook-page-posts", async (red, res) => {
   // Receive the phone number from user, get access token from database
   const phoneNumber = red.body.phoneNumber;
+  const usersRef = doc(db, "users", phoneNumber);
+  const userSnap = await getDoc(usersRef);
 
   // Initial variable
   var pagePostData = [];
@@ -249,8 +251,6 @@ app.post("/get-facebook-page-posts", async (red, res) => {
 
   // Connect to firebase
   try {
-    const usersRef = doc(db, "users", phoneNumber);
-    const userSnap = await getDoc(usersRef);
     userAccessToken = userSnap.data().facebook.auth.accessToken;
     userID = userSnap.data().facebook.auth.userID;
   } catch (err) {
@@ -270,7 +270,6 @@ app.post("/get-facebook-page-posts", async (red, res) => {
 
   // GET page access token
   try {
-    console.log("START GET PAGE ACCESS TOKEN");
     const response = await fetch(
       `https://graph.facebook.com/${userID}/accounts?fields=name,access_token&access_token=${userAccessToken}`,
       {
@@ -282,13 +281,11 @@ app.post("/get-facebook-page-posts", async (red, res) => {
     );
 
     const res = await response.json();
-    console.log("END GET PAGE ACCESS TOKEN", res);
     pageData = {
       name: res.data[0].name,
       access_token: res.data[0].access_token,
       id: res.data[0].id,
     };
-    console.log("END GET PAGE ACCESS TOKEN", pageData);
   } catch (e) {
     console.error("Error get page access token: ", error);
   }
@@ -314,7 +311,6 @@ app.post("/get-facebook-page-posts", async (red, res) => {
   // ADD isFavorite property to post
   try {
     addIsFavoriteProperty(pagePostData, favoritePostData);
-    console.log("COMPLETE ADD isFavorite");
     res.json({
       pageData: { id: pageData.id, name: pageData.name, social: "facebook" },
       posts: pagePostData,
