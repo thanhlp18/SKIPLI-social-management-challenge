@@ -1,35 +1,37 @@
 import {
+  ArrowLeftOnRectangleIcon,
+  AtSymbolIcon,
+  Square2StackIcon,
+} from "@heroicons/react/24/solid";
+import {
   Card,
-  Typography,
+  Chip,
   List,
   ListItem,
   ListItemPrefix,
   ListItemSuffix,
-  Chip,
+  Typography,
 } from "@material-tailwind/react";
-import {
-  PresentationChartBarIcon,
-  ShoppingBagIcon,
-  UserCircleIcon,
-  Cog6ToothIcon,
-  InboxIcon,
-  PowerIcon,
-  Square2StackIcon,
-  AtSymbolIcon,
-  ArrowDownLeftIcon,
-  ArrowLeftOnRectangleIcon,
-} from "@heroicons/react/24/solid";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export default function Sidebar() {
+  const location = useLocation();
+  const navagte = useNavigate();
+
   return (
-    <Card className="shadow-blue-gray-900/5 h-screen w-full max-w-[20rem] rounded-none border border-gray-200 p-4 shadow-none">
+    <Card className="shadow-blue-gray-900/5 h-screen w-full rounded-none border border-gray-200 p-4 shadow-none">
       <div className="mb-2 p-4">
         <Typography variant="h5" color="blue-gray">
           Skipli Project
         </Typography>
       </div>
       <List>
-        <ListItem>
+        <ListItem
+          className={
+            location.pathname === "/posts" ? "bg-gray-900 text-white" : ""
+          }
+          onClick={() => navagte("/posts")}
+        >
           <ListItemPrefix>
             <Square2StackIcon className="h-5 w-5" />
           </ListItemPrefix>
@@ -44,7 +46,12 @@ export default function Sidebar() {
             />
           </ListItemSuffix>
         </ListItem>
-        <ListItem>
+        <ListItem
+          className={
+            location.pathname === "/accounts" ? "bg-gray-900 text-white" : ""
+          }
+          onClick={() => navagte("/accounts")}
+        >
           <ListItemPrefix>
             <AtSymbolIcon className="h-5 w-5" />
           </ListItemPrefix>

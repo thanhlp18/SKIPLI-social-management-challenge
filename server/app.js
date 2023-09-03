@@ -22,6 +22,8 @@ const {
   updateDoc,
 } = require("firebase/firestore/lite");
 const firebaseConfig = require("./.firebaseConfig/firebaseConfig.json");
+const { defineBoolean } = require("firebase-functions/params");
+const { error } = require("firebase-functions/logger");
 const firebaseStore = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseStore);
 // End firebase config
@@ -35,7 +37,10 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 // -------------- method
-//Start validate phone number when use input
+
+//START OTP HANDLE
+
+//Validate phone number when use input
 app.get("/validate-phone-number", (req, res) => {
   const phoneNumber = req.query.phoneNumber;
   const countryCode = req.query.countryCode;
@@ -55,9 +60,7 @@ app.get("/validate-phone-number", (req, res) => {
       res.status(500).json({ error: "An error occurred" }); // Handle errors and send an error response
     });
 });
-//End validate phone number when use input
 
-//START OTP HANDLE
 // Generate a random 6-digit access code
 function generateAccessCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -71,7 +74,7 @@ app.post("/generate-access-code", async (req, res) => {
 
   // addDoc(collection(db, "users")
   try {
-    const userRef = await setDoc(doc(db, "users", phoneNumber), {
+    const userRef = await updateDoc(doc(db, "users", phoneNumber), {
       accessCode: accessCode,
       createdDate: timeStamp,
     }).then(() => {
@@ -108,80 +111,202 @@ app.post("/validate-access-code", async (req, res) => {
     console.error("Error adding document: ", e);
   }
 });
+
 // END OTP handle
 
-// // START facebook login handle
+//START Facebook API handle
 
+// Facebook login handle
 app.post("/loginFacebook", async (req, res) => {
-  console.log(req.body);
-  const accessToken = req.body.accessToken;
+  // console.log(req.body);
+  const facebookAuth = req.body.facebook;
   const phoneNumber = req.body.phoneNumber;
-  const provider = req.body.provider;
-  const timeStamp = serverTimestamp();
+  console.log("LOGIN SUCCESSFULL: ", phoneNumber);
 
-  const social = {
-    [provider]: {
-      accessToken: accessToken,
-      expirationTime: timeStamp,
-    },
-  };
+  // Connect to firebase
+  const usersRef = doc(db, "users", phoneNumber);
+  const userSnap = await getDoc(usersRef);
+  const facebookData = userSnap.data().facebook;
 
-  // addDoc(collection(db, "users")
+  // Request page was manage by user
+  // const pageResponse = await fetch(
+  //   `https://graph.facebook.com/v17.0/me/accounts?access_token=${facebookAuth.accessToken}`
+  //   // `https://graph.facebook.com/v17.0/me/accounts?access_token=${facebookAuth.accessToken}`
+  // );
+  // const pageData = pageResponse.data;
+
+  // console.log(await pageResponse.json());
+
   try {
     const userRef = await updateDoc(doc(db, "users", phoneNumber), {
-      [provider]: {
-        accessToken: accessToken,
-        expirationTime: timeStamp,
+      facebook: {
+        ...facebookData,
+        auth: facebookAuth,
+        // page: pageData,
       },
     }).then(() => {
       res.json({ success: true }); // Send the data back to the client
     });
   } catch (e) {
-    console.error("Error adding document: ");
+    console.error("Error adding document: ", error);
   }
 });
-// // Facebook App credentials
-// const facebookAppId = process.env.FACEBOOK_APP_API;
-// const facebookAppSecret = process.env.FACEBOOK_APP_SECRET;
-// const redirectUri = process.env.REDIRECT_URL;
 
-// app.get("/login-facebook", async (req, res) => {
-//   const code = req.query.code;
+// Get login data in server
+// app.get("/getFacebookLoginData/:userPhoneNumber", async (req, res) => {
+//   const userPhoneNumber = req.params.userPhoneNumber;
+//   console.log(userPhoneNumber);
 
-//   // Send the validate code to client
-//   // res.send(code);
-//   axios
-//     .get("https://graph.facebook.com/v17.0/oauth/access_token", {
-//       params: {
-//         client_id: facebookAppId,
-//         redirect_uri: redirectUri,
-//         client_secret: facebookAppSecret,
-//         code: code,
-//       },
-//     })
-//     .then((response) => {
-//       const responseData = response.data;
-
-//       if (responseData.error) {
-//         // Handle Facebook API error
-//         console.error("Facebook API error:", responseData.error);
-//         res.status(500).json({ error: "Facebook API error" });
-//       } else if (responseData.access_token) {
-//         // Access token successfully received
-//         console.log("Access Token:", responseData.access_token);
-//         res.json({ success: true, access_token: responseData.access_token });
-//       } else {
-//         // Handle unexpected response
-//         console.error("Unexpected response from Facebook");
-//         res.status(500).json({ error: "Unexpected response from Facebook" });
-//       }
-//     })
-//     .catch((error) => {
-//       console.error("Facebook login error:", error);
-//       res.status(500).json({ error: "Failed to log in with Facebook" });
-//     });
+//   try {
+//     // Access Firestore and retrieve the
+//     const usesRef = doc(db, "users", userPhoneNumber);
+//     const useSnap = await getDoc(usesRef);
+//     console.log(useSnap.data());
+//     if (useSnap.exists()) {
+//       const facebookData = await useSnap.data().facebook.auth;
+//       res.json(facebookData);
+//     } else {
+//       // docSnap.data() will be undefined in this case
+//       console.log("Can't get data information from database");
+//     }
+//   } catch (error) {
+//     console.error("Error retrieving Facebook data:", error);
+//     res.status(500).json({ error: "Internal server error" });
+//   }
 // });
-// //END facebook login handle
+
+// Get facebook posts
+app.post("/get-facebook-posts", async (red, res) => {
+  // Receive the phone number from user, get access token from database
+  const phoneNumber = red.body.phoneNumber;
+
+  // A function to check wherether the post is user's favorite, if favorite add ? {isFavorite: true} {isFavorite: false}
+  function addIsFavoriteProperty(arrayA, arrayB) {
+    const idSetB = new Set(arrayB);
+    for (const obj of arrayA) {
+      if (idSetB.has(obj.id)) {
+        obj.isFavorite = true;
+      } else {
+        obj.isFavorite = false;
+      }
+    }
+  }
+
+  // Connect to firebase
+  const usersRef = doc(db, "users", phoneNumber);
+  const userSnap = await getDoc(usersRef);
+  const access_token = userSnap.data().facebook.auth.accessToken;
+  var postData = [];
+  var favoritePostData = [];
+  var userData = [];
+
+  // GET favorite post id
+  try {
+    const social = "facebook";
+    if (userSnap.exists()) {
+      favoritePostData = await userSnap.data()[social].favorite_social_post;
+      console.log("FAVORITE POST DATA: ", favoritePostData);
+      if (!favoritePostData) favoritePostData = [];
+    }
+  } catch (error) {
+    console.log("Can't get favorite posts from server: ", error);
+  }
+
+  // GET facebook posts from facebook server
+  try {
+    console.log("START GET FACEBOOK POST");
+    const response = await fetch(
+      `https://graph.facebook.com/v17.0/me?fields=posts{description,caption,full_picture,message,shares,sharedposts},name,id&access_token=${access_token}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const data = await response.json();
+    // console.log("END GET FACEBOOK POST", data);
+    userData = {
+      name: data.name,
+      id: data.id,
+    };
+    postData = data.posts.data; // Array[{id, message, full picture, description},...]
+  } catch (e) {
+    console.error("Error get posts facebook: ", error);
+  }
+
+  // ADD isFavorite property to post
+  try {
+    addIsFavoriteProperty(postData, favoritePostData);
+    console.log("COMPLETE ADD isFavorite");
+    res.json({ userData: userData, posts: postData }); //Array[{id, message, full picture, description, isFavorite},...]
+  } catch (error) {
+    console.log("Can' add favorite property: ", error);
+  }
+});
+
+// CREATE the favorite post
+app.post("/create-favorite-post", async (red, res) => {
+  const phoneNumber = red.body.phoneNumber;
+  const postId = red.body.postId;
+  const social = red.body.social;
+  console.log("PHONE NUMBER: ", phoneNumber);
+  console.log("postId: ", postId);
+  console.log("social: ", social);
+  // Update the favorite post in database
+  try {
+    const usersRef = doc(db, "users", phoneNumber);
+    const docSnap = await getDoc(usersRef);
+
+    const socialData = docSnap.data()[social];
+    const favoritePostData = socialData.favorite_social_post;
+    console.log("UPDATE NEW FAVORITE POST------");
+    if (favoritePostData) {
+      updateDoc(usersRef, {
+        [social]: {
+          ...socialData,
+          favorite_social_post: [...favoritePostData, postId],
+        },
+      });
+    } else {
+      updateDoc(usersRef, {
+        [social]: {
+          ...socialData,
+          favorite_social_post: [postId],
+        },
+      });
+    }
+
+    res.json({ success: true });
+  } catch (e) {
+    console.error("Error adding document: ", e);
+  }
+});
+
+// GET the favorite post
+app.get("/get-favorite-posts", async (req, res) => {
+  const phoneNumber = "+" + req.query.phoneNumber.trim();
+  const social = req.query.social;
+
+  console.log("GET DATA: ", phoneNumber, "social: ", social);
+  try {
+    // Access Firestore and retrieve the
+    const usesRef = doc(db, "users", phoneNumber);
+    const useSnap = await getDoc(usesRef);
+    console.log();
+    if (useSnap.exists()) {
+      const facebookData = await useSnap.data()[social].favorite_social_post;
+      res.json({ favorite_social_post: facebookData });
+    } else {
+      // docSnap.data() will be undefined in this case
+      console.log("Can't get data information from database");
+    }
+  } catch (error) {
+    console.error("Error retrieving Facebook data:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 // Start the server
 const port = process.env.PORT || 3001;

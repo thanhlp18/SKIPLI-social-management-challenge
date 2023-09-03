@@ -1,21 +1,22 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import "./App.css";
-import NavbarDashboard from "./containers/Dashboard/components/Navbar";
+import NavbarDashboard from "./containers/Dashboard/components/Navbar/Navbar";
 import PostList from "./containers/Dashboard/components/PostList";
 import Dashboard from "./containers/Dashboard/Dashboard";
 import SignIn from "./containers/SignIn";
+import AccountList from "./containers/Dashboard/components/AccountList";
 const router = createBrowserRouter([
   {
     path: "/",
     element: <Dashboard />,
     children: [
       {
-        path: "/postlist",
+        path: "/posts",
         element: <PostList />,
       },
       {
-        path: "/account",
-        element: <NavbarDashboard />,
+        path: "/accounts",
+        element: <AccountList />,
       },
     ],
   },

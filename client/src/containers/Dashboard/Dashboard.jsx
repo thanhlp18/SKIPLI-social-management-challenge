@@ -2,15 +2,10 @@ import React from "react";
 import { Outlet } from "react-router-dom";
 import FacebookLoginBtn from "../../components/FacebookLogin/FacebookLoginBtn";
 import Sidebar from "../../components/Sidebar";
-import { useCookies } from "react-cookie";
 
-Dashboard.propTypes = {};
-
-function Dashboard(props) {
-  // const [cookies, setCookie, removeCookie] = useCookies(["login"]);
-  // console.log(cookies);
+function Dashboard() {
   return (
-    <div className="grid grid-cols-5">
+    <div className="grid grid-cols-5 ">
       <div>
         <FacebookLoginBtn />
         <Sidebar className="col-span-1" />

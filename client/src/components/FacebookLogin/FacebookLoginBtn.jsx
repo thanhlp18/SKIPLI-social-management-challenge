@@ -1,17 +1,22 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import LoginSocialFacebook from "./LoginSocialFacebook";
-
-// CUSTOMIZE ANY UI BUTTON
+import clsx from "clsx";
+import { useDispatch, useSelector } from "react-redux";
 import { FacebookLoginButton } from "react-social-login-buttons";
-import { loginFacebookApi } from "../../api/socialApi";
 
 // REDIRECT URL must be same with URL where the (reactjs-social-login) components is locate
 // MAKE SURE the (reactjs-social-login) components aren't unmounted or destroyed before the ask permission dialog closes
 const REDIRECT_URI = window.location.href;
 
-const App = () => {
+const App = (props) => {
+  const { className } = props;
   const [provider, setProvider] = useState("");
   const [profile, setProfile] = useState(null);
+  const facebookLogin = useSelector((state) => state.facebookLogin.value);
+  const dispatch = useDispatch();
+  useEffect(() => {
+    console.log("Facebook Login Redux: ", facebookLogin);
+  }, []);
 
   const onLoginStart = useCallback(() => {
     alert("login start");
@@ -24,28 +29,29 @@ const App = () => {
   }, []);
 
   const onLogout = useCallback(() => {}, []);
+  // console.log(profile);
 
   return (
-    <div className={`App ${provider && profile ? "hide" : ""}`}>
-      <h1 className="title">ReactJS Social Login</h1>
+    <div
+      className={clsx(`App ${provider && profile ? "hide" : ""}`, className)}
+    >
       <LoginSocialFacebook
         isOnlyGetToken={false}
+        scope={"public_profile,user_posts"}
         appId={process.env.REACT_APP_FACEBOOK_APP_API || ""}
         onLoginStart={onLoginStart}
         onResolve={({ provider, data }) => {
           setProvider(provider);
           setProfile(data);
         }}
-        scope={"public_profile"}
         cookie={true}
-        // return_scopes={true}
+        return_scopes={true}
         onLogoutSuccess={onLogoutSuccess}
         onReject={(err) => {
           console.log(err);
         }}
       >
-        <FacebookLoginButton />
-        <button onClick={onLogout}>Logout</button>
+        <FacebookLoginButton className="w-96" />
       </LoginSocialFacebook>
     </div>
   );

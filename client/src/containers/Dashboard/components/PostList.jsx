@@ -1,35 +1,62 @@
-import React from "react";
-import PropTypes from "prop-types";
-import NavbarDashboard from "./Navbar";
+import React, { useEffect, useState } from "react";
+import { useDispatch } from "react-redux";
+import { createFavoritePostApi, getPostFacebook } from "../../../api/socialApi";
 import SocialPost from "../../../components/SocialPost/SocialPost";
-
-PostList.propTypes = {};
+import NavbarDashboard from "./Navbar/Navbar";
 
 function PostList(props) {
+  const [socialPosts, setSocialPost] = useState([]);
+  const [userData, setUserData] = useState({ username: "", fullname: "" });
+
+  const skipliAccount = JSON.parse(localStorage.getItem("skipliAccount"));
+
+  useEffect(() => {
+    if (skipliAccount) {
+      const fetchData = async () => {
+        try {
+          const response = await getPostFacebook(skipliAccount.userPhoneNumber);
+          console.log("DATA:", response.posts);
+          setSocialPost(response.posts);
+          setUserData({
+            username: response.userData.id,
+            fullname: response.userData.name,
+          });
+        } catch (error) {
+          console.error("Error fetching data:", error);
+        }
+      };
+
+      fetchData();
+    }
+  }, []);
+
+  const handleClickFavorite = (id, social) => {
+    createFavoritePostApi(skipliAccount.userPhoneNumber, social, id);
+    // console.log("ID: ", id, "SOCIAL: ", social);
+  };
+
   return (
     <div>
       <NavbarDashboard />
-      <div className="xs:grid-cols-1 grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {Array.from({ length: 5 })
-          .map((_, index) => ({
-            user: { username: "thanhlp18", fullname: "Le Phuoc Thanh" },
-            media: (
-              <img
-                src="https://images.unsplash.com/photo-1499696010180-025ef6e1a8f9?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80"
-                alt="ui/ux review check"
-              />
-            ),
-            copy: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum is simply dummy text of the printing and typesetting industry.Lorem Ipsum is simply dummy text of the printing and typesetting industry.Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
-            social: "twitter",
-          }))
-          .map((ele, index) => (
-            <SocialPost
-              user={ele.user}
-              media={ele.media}
-              copy={ele.copy}
-              social={ele.social}
-            />
-          ))}
+      <div className="xs:grid-cols-1 grid  gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {/* <div className="flex flex-wrap gap-4"> */}
+        {/* <div className=" xs:columns-1 gap-4 sm:columns-2 lg:columns-3 xl:columns-4"> */}
+        {socialPosts.map((post, index) => (
+          <SocialPost
+            user={userData}
+            media={
+              post?.full_picture && (
+                <img src={post.full_picture} alt="ui/ux review check" />
+              )
+            }
+            copy={post.description || post.caption}
+            social={"facebook"}
+            key={`social-post-${index}`}
+            handleClickFavorite={handleClickFavorite}
+            postId={post.id}
+            isFavorite={post.isFavorite}
+          />
+        ))}
       </div>
     </div>
   );

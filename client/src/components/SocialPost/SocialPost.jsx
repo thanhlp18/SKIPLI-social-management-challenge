@@ -1,37 +1,45 @@
 import {
-  BookmarkIcon,
+  BookmarkIcon as BookmarkIconInActive,
   ChartBarIcon,
   ChatBubbleLeftIcon,
-  EllipsisVerticalIcon,
   HandThumbUpIcon,
   HeartIcon,
 } from "@heroicons/react/24/outline";
 import {
   ArrowPathRoundedSquareIcon,
   ArrowUturnRightIcon,
+  BookmarkIcon as BookmarkIconActive,
 } from "@heroicons/react/24/solid";
 import {
+  Button,
   Card,
   CardBody,
-  CardFooter,
   CardHeader,
   Tooltip,
   Typography,
 } from "@material-tailwind/react";
-import CollapseBtn from "../CollapseBtn/CollapseBtn";
+import clsx from "clsx";
+import { useState } from "react";
 import IconGroup from "./components/IconGroup";
-import PropTypes from "prop-types";
 
-SocialPost.propTypes = {
-  media: PropTypes.element,
-  copy: PropTypes.element,
-  social: PropTypes.oneOf(["facebook", "instagram", "twitter"]),
-  user: PropTypes.object,
-};
+// SocialPost.propTypes = {
+//   media: PropTypes.element,
+//   copy: PropTypes.element,
+//   social: PropTypes.oneOf(["facebook", "instagram", "twitter"]),
+//   user: PropTypes.object,
+// };
 
 export default function SocialPost(props) {
-  console.log(props.media);
-  const { media, copy, social, user } = props;
+  const {
+    media,
+    copy,
+    social,
+    user,
+    className,
+    postId,
+    isFavorite,
+    handleClickFavorite,
+  } = props;
   const socialReactions = {
     facebook: [
       {
@@ -104,8 +112,24 @@ export default function SocialPost(props) {
       },
     ],
   };
+
+  const [isSateFavorite, setIsStateFavorite] = useState(isFavorite);
+
+  const onClickFavorite = (id, social) => {
+    console.log("BEFORE CLICK: ", isSateFavorite);
+
+    setIsStateFavorite(!isSateFavorite);
+    // When click is favorite (isSateFavorite = true)
+    if (!isSateFavorite) handleClickFavorite(id, social);
+  };
   return (
-    <Card className="w-full max-w-[26rem]  rounded-none border border-gray-100 shadow-sm">
+    // <Card className="w-full max-w-[16rem]  break-before-column rounded-none border border-gray-100 shadow-sm">
+    <Card
+      className={clsx(
+        "w-full max-w-[16rem] break-inside-avoid-column rounded-none border border-gray-100 shadow-sm	",
+        className
+      )}
+    >
       <CardHeader
         floated={false}
         shadow={false}
@@ -114,7 +138,11 @@ export default function SocialPost(props) {
       >
         <div className=" flex items-center justify-between">
           <Tooltip
-            content="Material Tailwind"
+            content={
+              <span className="ps-1   font-normal">
+                {social} | @{user.username}
+              </span>
+            }
             animate={{
               mount: { scale: 1, y: 0 },
               unmount: { scale: 0, y: 25 },
@@ -123,20 +151,17 @@ export default function SocialPost(props) {
             <Typography
               variant="h5"
               color="blue-gray"
-              className="cursor-pointer pl-2 text-xs font-medium text-black"
+              className="cursor-pointer p-2 text-xs font-medium text-black"
             >
               {user.fullname}
-              <span className="ps-1 font-normal text-gray-400">
-                @{user.username}
-              </span>
             </Typography>
           </Tooltip>
-          <CollapseBtn
+          {/* <CollapseBtn
             label={<EllipsisVerticalIcon className="h-5 w-5 text-black" />}
             btnClass={"bg-transparent shadow-none hover:shadow-none p-2"}
             collapseClass={" top-full absolute"}
             cardClass={"border border-gray-50 rounded-none"}
-          />
+          /> */}
         </div>
         {media ? media : ""}
       </CardHeader>
@@ -151,16 +176,28 @@ export default function SocialPost(props) {
                   data={ele.data}
                   type={ele.type}
                   key={`social-reaction-facebook-${index}`}
+                  className="py-2"
                 />
               );
             })}
           </div>
-          <IconGroup
-            icon={
-              <BookmarkIcon className="sm:h-5 sm:w-5 lg:h-4 lg:w-4 xl:h-5 xl:w-5" />
-            }
-            type={"Favorite"}
-          />
+          <Button
+            variant="text"
+            className="p-0"
+            onClick={() => onClickFavorite(postId, social)}
+          >
+            <IconGroup
+              icon={
+                isSateFavorite ? (
+                  <BookmarkIconActive className="sm:h-5 sm:w-5 lg:h-4 lg:w-4 xl:h-5 xl:w-5" />
+                ) : (
+                  <BookmarkIconInActive className="sm:h-5 sm:w-5 lg:h-4 lg:w-4 xl:h-5 xl:w-5" />
+                )
+              }
+              type={"Favorite"}
+              className="p-2"
+            />
+          </Button>
 
           {/* End social reaction  */}
 

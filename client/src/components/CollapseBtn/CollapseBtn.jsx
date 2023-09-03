@@ -4,12 +4,12 @@ import React from "react";
 
 import PropTypes from "prop-types";
 
-CollapseBtn.propTypes = {
-  label: PropTypes.string,
-  btnClass: PropTypes.string,
-  cardClass: PropTypes.string,
-  collapseClass: PropTypes.string,
-};
+// CollapseBtn.propTypes = {
+//   label: PropTypes.string,
+//   btnClass: PropTypes.string,
+//   cardClass: PropTypes.string,
+//   collapseClass: PropTypes.string,
+// };
 
 export default function CollapseBtn(props) {
   const { label, btnClass, cardClass, collapseClass } = props;
@@ -26,7 +26,9 @@ export default function CollapseBtn(props) {
         <Card
           className={clsx("rounded-none bg-gray-50 shadow-none", cardClass)}
         >
-          <CardBody>{props.children}</CardBody>
+          <CardBody>
+            ({props.children} ? {props.children} : <></>)
+          </CardBody>
         </Card>
       </Collapse>
     </div>

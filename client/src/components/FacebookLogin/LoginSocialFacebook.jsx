@@ -6,7 +6,8 @@
  */
 import React, { memo, useCallback, useEffect, useRef, useState } from "react";
 import { loginFacebookApi } from "../../api/socialApi";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { addToken, deleteToken } from "./facebookSlice";
 
 const SDK_URL = "https://connect.facebook.net/en_EN/sdk.js";
 const SCRIPT_ID = "facebook-jssdk";
@@ -14,7 +15,7 @@ const _window = window;
 
 const LoginSocialFacebook = ({
   appId,
-  scope = "email,public_profile",
+  scope = "email,public_profile, pages_show_list",
   state = true,
   xfbml = true,
   cookie = true,
@@ -35,7 +36,8 @@ const LoginSocialFacebook = ({
   const scriptNodeRef = useRef(null);
   const [isSdkLoaded, setIsSdkLoaded] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const phoneNumber = useSelector((state) => state.phoneNumber.value);
+
+  const dispatch = useDispatch();
 
   useEffect(() => {
     !isSdkLoaded && load();
@@ -80,7 +82,6 @@ const LoginSocialFacebook = ({
 
   const getMe = useCallback(
     (authResponse) => {
-      console.log("getme");
       _window.FB.api(
         "/me",
         { locale: language, fields: fieldsProfile },
@@ -98,11 +99,10 @@ const LoginSocialFacebook = ({
   const handleResponse = useCallback(
     (response) => {
       if (response.authResponse) {
-        loginFacebookApi(
-          phoneNumber,
-          response.authResponse.accessToken,
-          "facebook"
-        );
+        const phoneNumber = JSON.parse(
+          localStorage.getItem("skipliAccount")
+        ).userPhoneNumber;
+        loginFacebookApi(response.authResponse, phoneNumber);
 
         if (isOnlyGetToken)
           onResolve({
@@ -178,20 +178,18 @@ const LoginSocialFacebook = ({
     handleResponse,
   ]);
 
-  const isLogIn = useCallback(() => {
-    if (isSdkLoaded) {
+  const loginStatus = async () => {
+    if (isSdkLoaded && _window.FB) {
       _window.FB.getLoginStatus(function (response) {
         if (response.status === "connected") {
-          var accessToken = response.authResponse;
-          console.log("da dang nhap: ", accessToken);
+          var accessToken = response.authResponse.accessToken;
+          console.log(accessToken);
         } else {
-          console.log("chua dang nhap!");
+          console.log(response);
         }
       });
     }
-  }, []);
-
-  isLogIn();
+  };
 
   return (
     <div className={className} onClick={loginFB}>

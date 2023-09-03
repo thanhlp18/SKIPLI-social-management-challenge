@@ -73,9 +73,9 @@ const SignIn = () => {
           navigate("/postlist");
           // save user input to local storage
           localStorage.setItem(
-            userPhoneNumber,
+            "skipliAccount",
             JSON.stringify({
-              accessCode: otp,
+              userPhoneNumber: userPhoneNumber,
             })
           );
         }
