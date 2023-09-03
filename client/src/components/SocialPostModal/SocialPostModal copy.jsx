@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { createFacebookPost, postToFacebook } from "../../api/socialApi";
+import { createFacebookPost } from "../../api/socialApi";
 
 function FacebookPostForm() {
   const [caption, setCaption] = useState("");

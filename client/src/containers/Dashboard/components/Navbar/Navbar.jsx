@@ -10,10 +10,11 @@ import CollapseBtn from "../../../../components/CollapseBtn/CollapseBtn";
 import { useState } from "react";
 import SociaLoginButton from "./SocialLoginButton";
 import { SocialPostModal } from "../../../../components/SocialPostModal/SocialPostModal";
-import FacebookPostForm from "../../../../components/SocialPostModal/SocialPostModal copy";
+// import FacebookPostForm from "../../../../components/SocialPostModal/SocialPostModal copy";
 
 export default function NavbarDashboard() {
   const [socialAccount, setSocialAccount] = useState([]);
+  const [isCreatePost, SetIsCreatePost] = useState(false);
 
   const socialExample = [
     {
@@ -29,7 +30,7 @@ export default function NavbarDashboard() {
       name: "Le Phuoc Thanh",
     },
   ];
-
+  console.log(isCreatePost);
   return (
     <Navbar className=" flex  flex-col  items-start justify-between gap-3 rounded-none  border border-gray-200 px-4 py-3 shadow-none">
       {/* Social account circle start*/}
@@ -90,9 +91,8 @@ export default function NavbarDashboard() {
           </CollapseBtn>
         </div>
         <div className="ml-auto ">
-          {/* <Button className="rounded-md">Create A Post</Button> */}
-          {/* <SocialPostModal isOpen={true} /> */}
-          <FacebookPostForm />
+          <SocialPostModal />
+          {/* <FacebookPostForm /> */}
         </div>
       </div>
     </Navbar>
