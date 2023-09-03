@@ -47,7 +47,7 @@ export const getPostFacebook = (phoneNumber) => {
         return response.json();
       })
       .then((data) => {
-        console.log(data);
+        // console.log(data);
         resolve(data);
       })
       .catch((error) => {
@@ -57,7 +57,6 @@ export const getPostFacebook = (phoneNumber) => {
 };
 
 export const createFacebookPost = async (image, caption, phoneNumber) => {
-  console.log(caption);
   const formData = new FormData();
   formData.append("message", caption);
   formData.append("image", image);

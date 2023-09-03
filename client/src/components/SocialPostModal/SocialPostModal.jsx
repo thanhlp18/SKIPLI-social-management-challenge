@@ -5,13 +5,24 @@ import Aos from "aos";
 
 import toast, { Toaster } from "react-hot-toast";
 import Toast from "../Toast";
+import { SocialPostSelectPlatform } from "./SocialPostSelectPlatform";
 
 export function SocialPostModal() {
   const [caption, setCaption] = useState("");
   const [image, setImage] = useState(null);
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
+  const [selectSocial, setSelectSocial] = useState([]);
+  useEffect(() => {
+    Aos.init({
+      duration: 150,
+    });
+  }, []);
 
+  //   Handle modal
+  const handleOpen = () => setOpen(!open);
+
+  //   Handle form
   const handleCaptionChange = (e) => {
     setCaption(e.target.value);
   };
@@ -24,57 +35,58 @@ export function SocialPostModal() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsPosting(true);
-    try {
-      // Call the API function to post to Facebook
-      const status = await createFacebookPost(image, caption, "+795442122");
-      console.log(status.success);
+    // Check if facebook is checked
+    if (selectSocial.facebook) {
+      setIsPosting(true);
+      console.log("POSTING TO FACEOOK!");
+      try {
+        // Call the API function to post to Facebook
+        const status = await createFacebookPost(image, caption, "+795442122");
+        console.log(status.success);
 
-      if (status.success) {
-        toast.custom(
-          (t) => (
-            <Toast
-              type={"success"}
-              description={"Your post was posted!"}
-              className={`${
-                t.visible ? "animate-enter" : "animate-leave"
-              }  	m-auto box-border w-screen rounded-md shadow-sm ease-in-out lg:w-96`}
-            />
-          ),
-          { duration: 700 }
-        );
-      } else {
-        toast.custom(
-          (t) => (
-            <Toast
-              type={"error"}
-              description={"Please try again!"}
-              className={`${
-                t.visible ? "animate-enter" : "animate-leave"
-              }  	m-auto box-border w-screen rounded-md shadow-sm ease-in-out lg:w-96`}
-            />
-          ),
-          { duration: 700 }
-        );
+        //   Show toasts
+        if (status.success) {
+          toast.custom(
+            (t) => (
+              <Toast
+                type={"success"}
+                description={"Your post was posted!"}
+                className={`${
+                  t.visible ? "animate-enter" : "animate-leave"
+                }  	m-auto box-border w-screen rounded-md shadow-sm ease-in-out lg:w-96`}
+              />
+            ),
+            { duration: 700 }
+          );
+        } else {
+          toast.custom(
+            (t) => (
+              <Toast
+                type={"error"}
+                description={"Please try again!"}
+                className={`${
+                  t.visible ? "animate-enter" : "animate-leave"
+                }  	m-auto box-border w-screen rounded-md shadow-sm ease-in-out lg:w-96`}
+              />
+            ),
+            { duration: 700 }
+          );
+        }
+
+        // Reset form fields or show a success caption
+        setIsPosting(false);
+        setCaption("");
+        setImage(null);
+      } catch (error) {
+        console.error("Failed to post to Facebook:", error);
       }
-
-      // Reset form fields or show a success caption
-      setIsPosting(false);
-      setCaption("");
-      setImage(null);
-    } catch (error) {
-      console.error("Failed to post to Facebook:", error);
-      // Handle and display the error to the user
     }
   };
 
-  const handleOpen = () => setOpen(!open);
-
-  useEffect(() => {
-    Aos.init({
-      duration: 150,
-    });
-  }, []);
+  const handleSelectSocial = (selectSocialData) => {
+    console.log(selectSocialData);
+    setSelectSocial(selectSocialData);
+  };
 
   return (
     <>
@@ -89,13 +101,13 @@ export function SocialPostModal() {
         size="xs"
         open={open}
         // handler={handleOpen}
-        className="h-fit overflow-y-scroll rounded-lg py-6 shadow-none"
+        className="xs:overflow-scroll h-fit rounded-lg py-6 shadow-none"
       >
         <Toaster position="top-center" reverseOrder={false} />
-        <form className="p-4" onSubmit={handleSubmit}>
+        <form className="p-8" onSubmit={handleSubmit}>
           <div className="">
             <div className=" border-b border-gray-900/10">
-              <h2 className="text-base font-semibold  text-gray-900">
+              <h2 className="text-xl font-semibold text-gray-900">
                 Create a post
               </h2>
               <p className="mt-1 text-sm  text-gray-600">
@@ -129,7 +141,7 @@ export function SocialPostModal() {
                 <div className="col-span-full">
                   <label
                     htmlFor="images"
-                    className="mb-2 inline-block text-neutral-700 dark:text-neutral-200"
+                    className="mb-2 inline-block text-sm font-medium text-neutral-700 dark:text-neutral-200"
                   >
                     Your photos
                   </label>
@@ -141,6 +153,16 @@ export function SocialPostModal() {
                     accept="image/*"
                     onChange={handleImageChange}
                   />
+                </div>
+
+                <div className="col-span-full">
+                  <label
+                    htmlFor="images"
+                    className="mb-1 inline-block text-sm font-medium text-neutral-700 dark:text-neutral-200"
+                  >
+                    Post to
+                  </label>
+                  <SocialPostSelectPlatform handleSelect={handleSelectSocial} />
                 </div>
               </div>
             </div>

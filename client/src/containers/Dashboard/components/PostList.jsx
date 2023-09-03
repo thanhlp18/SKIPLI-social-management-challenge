@@ -14,7 +14,7 @@ function PostList(props) {
       const fetchData = async () => {
         try {
           const response = await getPostFacebook(skipliAccount.userPhoneNumber);
-          console.log("DATA:", response.posts);
+          // console.log("DATA:", response.posts);
           setSocialPost(response.posts);
           setPageData({
             social: response.pageData.social,
