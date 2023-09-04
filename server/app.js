@@ -317,7 +317,7 @@ app.post(
   }
 );
 
-// Get facebook posts
+// Get facebook personal posts
 app.post("/get-personal-facebook-posts", async (req, res) => {
   // Receive the phone number from user, get access token from database
   const phoneNumber = req.body.phoneNumber;
@@ -388,6 +388,7 @@ app.post("/get-personal-facebook-posts", async (req, res) => {
   }
 });
 
+// Get facebook page posts
 app.post("/get-facebook-page-posts", async (req, res) => {
   // Receive the phone number from user, get access token from database
   const phoneNumber = req.body.phoneNumber;
@@ -476,10 +477,13 @@ app.post("/get-facebook-page-posts", async (req, res) => {
   // ADD isFavorite property to post
   try {
     addIsFavoriteProperty(pagePostData, favoritePostData);
-    res.json({
-      pageData: { id: pageData.id, name: pageData.name, social: "facebook" },
-      posts: pagePostData,
-    }); //Array[{id, message, full picture, description, isFavorite},...]
+    const postReturn = pagePostData.map((post, index) => ({
+      ...post,
+      socialID: pageData.id,
+      socialName: pageData.name,
+      socialPlatform: "facebook",
+    }));
+    res.json(postReturn); //Array[{id, message, full picture, description, isFavorite},...]
   } catch (error) {
     console.log("Can' add favorite property: ", error);
   }

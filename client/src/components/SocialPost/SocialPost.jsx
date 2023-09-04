@@ -140,7 +140,7 @@ export default function SocialPost(props) {
           <Tooltip
             content={
               <span className="ps-1   font-normal">
-                {pageData.social} page | @{pageData.username}
+                {pageData.social} page | @{pageData.socialID}
               </span>
             }
             animate={{
@@ -153,7 +153,7 @@ export default function SocialPost(props) {
               color="blue-gray"
               className="cursor-pointer p-2 text-xs font-medium text-black"
             >
-              {pageData.name}
+              {pageData.socialName}
             </Typography>
           </Tooltip>
           {/* <CollapseBtn
