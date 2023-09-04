@@ -14,7 +14,7 @@ import FacebookLoginBtn from "../../../components/FacebookLogin/FacebookLoginBtn
 
 export default function Account(props) {
   const { profileImage, userName, socialPlatform } = props;
-  console.log(socialPlatform);
+
   const social = {
     facebook: {
       name: "Facebook",

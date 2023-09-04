@@ -92,7 +92,6 @@ export const createFacebookPost = async (
     }
   } else {
     try {
-      console.log(scheduleDate);
       const response = await fetch(
         "http://localhost:3001/create-facebook-post",
         {

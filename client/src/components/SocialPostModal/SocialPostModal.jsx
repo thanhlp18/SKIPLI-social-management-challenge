@@ -82,8 +82,6 @@ export function SocialPostModal() {
     setScheduleDate({ ...scheduleDate, scheduledPublishTime: time });
   };
 
-  console.log(scheduleDate);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     // Check if facebook is checked
@@ -147,7 +145,6 @@ export function SocialPostModal() {
       }
     }
   };
-  console.log(selectSocial);
   return (
     <>
       <Button className="rounded-md" onClick={handleOpen}>

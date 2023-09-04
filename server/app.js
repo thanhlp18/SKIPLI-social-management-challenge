@@ -602,7 +602,7 @@ app.post("/get-social-accounts", async (req, res) => {
           ...accountsData,
           facebook: {
             isLogin: true,
-            name: "",
+            userName: "",
             id: facebookAccountAuth.userID,
             loginExpire: facebookAccountAuth.data_access_expiration_time,
             profileImage: "",
@@ -623,7 +623,7 @@ app.post("/get-social-accounts", async (req, res) => {
             facebook: {
               socialPlatform: "facebook",
               isLogin: true,
-              name: userPublicInformation.name,
+              userName: userPublicInformation.name,
               id: facebookAccountAuth.userID,
               loginExpire: facebookAccountAuth.data_access_expiration_time,
               profileImage: userPublicInformation.picture.data.url,
@@ -641,7 +641,7 @@ app.post("/get-social-accounts", async (req, res) => {
           ...accountsData,
           facebook: {
             isLogin: true,
-            name: "",
+            userName: "",
             id: instagramAccountAuth.userID,
             loginExpire: instagramAccountAuth.data_access_expiration_time,
             profileImage: "",
@@ -656,7 +656,7 @@ app.post("/get-social-accounts", async (req, res) => {
           ...accountsData,
           facebook: {
             isLogin: true,
-            name: "",
+            userName: "",
             id: twitterAccountAuth.userID,
             loginExpire: twitterAccountAuth.data_access_expiration_time,
             profileImage: "",

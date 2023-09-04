@@ -23,10 +23,8 @@ export default function CollapseBtn(props) {
         {label}
       </Button>
       <Collapse open={open} className={clsx(collapseClass)}>
-        <Card
-          className={clsx("rounded-none bg-gray-50 shadow-none", cardClass)}
-        >
-          <CardBody>{children}</CardBody>
+        <Card className={clsx("rounded-none shadow-none", cardClass)}>
+          <CardBody className="p-2">{children}</CardBody>
         </Card>
       </Collapse>
     </div>
