@@ -152,10 +152,175 @@ app.post("/loginFacebook", async (req, res) => {
   }
 });
 
+// CREATE facebook post
+app.post("/create-facebook-post", async (req, res) => {
+  var userAccessToken = "";
+  var userID = "";
+  try {
+    const phoneNumber = req.body.phoneNumber;
+    console.log("PHONE: ", phoneNumber);
+    // Connect to firebase
+    const usersRef = doc(db, "users", phoneNumber);
+    const userSnap = await getDoc(usersRef);
+
+    try {
+      // GET userAccessToken and userID from database
+      userAccessToken = userSnap.data().facebook.auth.accessToken;
+      userID = userSnap.data().facebook.auth.userID;
+    } catch (err) {
+      console.log("Can not get the user auth from firebase: ", err);
+    }
+  } catch (err) {
+    console.log("Can not connect to the firebase: ", err);
+  }
+
+  // GET pageAccessToken and page ID
+  var pageAccessToken = "";
+  var pageID = "";
+
+  try {
+    const pageAuthRes = await fetch(
+      `https://graph.facebook.com/${userID}/accounts?fields=access_token&access_token=${userAccessToken}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    const pageAuthData = await pageAuthRes.json();
+    pageAccessToken = pageAuthData.data[0].access_token;
+    pageID = pageAuthData.data[0].id;
+  } catch (err) {
+    console.log("ERROR: Can not get pageAccessToken and page Id: ", err);
+  }
+
+  try {
+    // Extract the message and image file from the request
+    const message = req.body.message;
+    const isScheduled = req.body.isScheduled;
+    const scheduledPublishTime = req.body.scheduledPublishTime;
+    console.log("message: ", message);
+    console.log("isScheduled: ", isScheduled);
+    console.log("scheduledPublishTime: ", scheduledPublishTime);
+    // Create a FormData object to send as a multi-part request
+    const formData = new FormData();
+
+    formData.append("message", message);
+    formData.append("access_token", pageAccessToken);
+    if (isScheduled) {
+      formData.append("scheduled_publish_time", scheduledPublishTime);
+      formData.append("published", "false");
+    }
+
+    // Define the headers manually
+    const headers = {
+      ...formData.getHeaders(),
+    };
+    // Make a POST request to upload the image to Facebook
+    const uploadResponse = await axios.post(
+      `https://graph.facebook.com/v17.0/${pageID}/feed`,
+      formData,
+      {
+        headers: headers,
+      }
+    );
+    // Respond with the Facebook post ID
+    res.json({ success: true });
+  } catch (error) {
+    // Handle errors
+    console.log("Error:", error.response ? error.response.data : error.message);
+    res.status(500).json({ success: false });
+  }
+});
+
+// CREATE facebook post with photo
+app.post(
+  "/create-facebook-post-with-photo",
+  upload.single("image"),
+  async (req, res) => {
+    var userAccessToken = "";
+    var userID = "";
+    try {
+      const { phoneNumber } = req.body;
+      console.log("PHONE NUMBER: ", phoneNumber);
+      // Connect to firebase
+      const usersRef = doc(db, "users", phoneNumber);
+      const userSnap = await getDoc(usersRef);
+
+      try {
+        // GET userAccessToken and userID from database
+        userAccessToken = userSnap.data().facebook.auth.accessToken;
+        userID = userSnap.data().facebook.auth.userID;
+      } catch (err) {
+        console.log("Can not get the user auth from firebase: ", err);
+      }
+    } catch (err) {
+      console.log("Can not connect to the firebase: ", err);
+    }
+
+    // GET pageAccessToken and page ID
+    var pageAccessToken = "";
+    var pageID = "";
+
+    try {
+      const pageAuthRes = await fetch(
+        `https://graph.facebook.com/${userID}/accounts?fields=access_token&access_token=${userAccessToken}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      const pageAuthData = await pageAuthRes.json();
+      pageAccessToken = pageAuthData.data[0].access_token;
+      pageID = pageAuthData.data[0].id;
+    } catch (err) {
+      console.log("ERROR: Can not get pageAccessToken and page Id: ", err);
+    }
+
+    try {
+      // Extract the message and image file from the request
+      const { message } = req.body;
+      const imageFile = req.file;
+
+      // Create a FormData object to send as a multi-part request
+      const formData = new FormData();
+
+      formData.append("message", message);
+      formData.append("image", fs.createReadStream(imageFile.path));
+      formData.append("access_token", pageAccessToken);
+
+      // Define the headers manually
+      const headers = {
+        ...formData.getHeaders(),
+      };
+      // Make a POST request to upload the image to Facebook
+      const uploadResponse = await axios.post(
+        `https://graph.facebook.com/v17.0/${pageID}/photos`,
+        formData,
+        {
+          headers: headers,
+        }
+      );
+      // Respond with the Facebook post ID
+      res.json({ success: true });
+    } catch (error) {
+      // Handle errors
+      console.log(
+        "Error:",
+        error.response ? error.response.data : error.message
+      );
+      res.status(500).json({ success: false });
+    }
+  }
+);
+
 // Get facebook posts
-app.post("/get-personal-facebook-posts", async (red, res) => {
+app.post("/get-personal-facebook-posts", async (req, res) => {
   // Receive the phone number from user, get access token from database
-  const phoneNumber = red.body.phoneNumber;
+  const phoneNumber = req.body.phoneNumber;
 
   // A function to check wherether the post is user's favorite, if favorite add ? {isFavorite: true} {isFavorite: false}
   function addIsFavoriteProperty(arrayA, arrayB) {
@@ -223,9 +388,9 @@ app.post("/get-personal-facebook-posts", async (red, res) => {
   }
 });
 
-app.post("/get-facebook-page-posts", async (red, res) => {
+app.post("/get-facebook-page-posts", async (req, res) => {
   // Receive the phone number from user, get access token from database
-  const phoneNumber = red.body.phoneNumber;
+  const phoneNumber = req.body.phoneNumber;
   const usersRef = doc(db, "users", phoneNumber);
   const userSnap = await getDoc(usersRef);
 
@@ -321,10 +486,10 @@ app.post("/get-facebook-page-posts", async (red, res) => {
 });
 
 // CREATE the favorite post
-app.post("/create-favorite-post", async (red, res) => {
-  const phoneNumber = red.body.phoneNumber;
-  const postId = red.body.postId;
-  const social = red.body.social;
+app.post("/create-favorite-post", async (req, res) => {
+  const phoneNumber = req.body.phoneNumber;
+  const postId = req.body.postId;
+  const social = req.body.social;
   console.log("PHONE NUMBER: ", phoneNumber);
   console.log("postId: ", postId);
   console.log("social: ", social);
@@ -382,87 +547,12 @@ app.get("/get-favorite-posts", async (req, res) => {
   }
 });
 
-// CREATE facebook post
-app.post("/create-facebook-post", upload.single("image"), async (req, res) => {
-  var userAccessToken = "";
-  var userID = "";
-  try {
-    const { phoneNumber } = req.body;
-    console.log("PHONE NUMBER: ", phoneNumber);
-    // Connect to firebase
-    const usersRef = doc(db, "users", phoneNumber);
-    const userSnap = await getDoc(usersRef);
-
-    try {
-      // GET userAccessToken and userID from database
-      userAccessToken = userSnap.data().facebook.auth.accessToken;
-      userID = userSnap.data().facebook.auth.userID;
-    } catch (err) {
-      console.log("Can not get the user auth from firebase: ", err);
-    }
-  } catch (err) {
-    console.log("Can not connect to the firebase: ", err);
-  }
-
-  // GET pageAccessToken and page ID
-  var pageAccessToken = "";
-  var pageID = "";
-
-  try {
-    const pageAuthRes = await fetch(
-      `https://graph.facebook.com/${userID}/accounts?fields=access_token&access_token=${userAccessToken}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    const pageAuthData = await pageAuthRes.json();
-    pageAccessToken = pageAuthData.data[0].access_token;
-    pageID = pageAuthData.data[0].id;
-  } catch (err) {
-    console.log("ERROR: Can not get pageAccessToken and page Id: ", err);
-  }
-
-  try {
-    // Extract the message and image file from the request
-    const { message } = req.body;
-    const imageFile = req.file;
-
-    // Create a FormData object to send as a multi-part request
-    const formData = new FormData();
-
-    formData.append("message", message);
-    formData.append("image", fs.createReadStream(imageFile.path));
-    formData.append("access_token", pageAccessToken);
-
-    // Define the headers manually
-    const headers = {
-      ...formData.getHeaders(),
-    };
-    // Make a POST request to upload the image to Facebook
-    const uploadResponse = await axios.post(
-      `https://graph.facebook.com/v17.0/${pageID}/photos`,
-      formData,
-      {
-        headers: headers,
-      }
-    );
-    // Respond with the Facebook post ID
-    res.json({ success: true });
-  } catch (error) {
-    // Handle errors
-    console.log("Error:", error.response ? error.response.data : error.message);
-    res.status(500).json({ success: false });
-  }
-});
 //END Facebook API handle
 
 //START Account api
 // GET accounts api
-app.post("/get-social-accounts", async (red, res) => {
-  const phoneNumber = red.body.phoneNumber;
+app.post("/get-social-accounts", async (req, res) => {
+  const phoneNumber = req.body.phoneNumber;
   console.log("USER PHONE NUMBER: ", phoneNumber);
   var accountsData = {
     facebook: {

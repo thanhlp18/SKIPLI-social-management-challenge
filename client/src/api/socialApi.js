@@ -56,21 +56,66 @@ export const getPostFacebook = (phoneNumber) => {
   });
 };
 
-export const createFacebookPost = async (image, caption, phoneNumber) => {
+export const createFacebookPost = async (
+  image,
+  message,
+  phoneNumber,
+  selectSocial,
+  scheduleDate = { isScheduled: false, scheduledPublishTime: "" }
+) => {
   const formData = new FormData();
-  formData.append("message", caption);
+  formData.append("message", message);
   formData.append("image", image);
-  formData.append("phoneNumber", "+84795442122");
+  formData.append("phoneNumber", phoneNumber);
+  if (image) {
+    if (scheduleDate.isScheduled)
+      return {
+        success: false,
+        message:
+          "The feature to schedule posts with images is under development",
+      };
+    console.log("RUN WITH IMAGE");
+    console.log("phoneNumber: ", phoneNumber);
+    console.log("message: ", message);
+    try {
+      const response = await fetch(
+        "http://localhost:3001/create-facebook-post-with-photo",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+      const status = await response.json();
+      return status;
+    } catch (error) {
+      console.error("Can't post the api to create the post:", error);
+    }
+  } else {
+    try {
+      console.log(scheduleDate);
+      const response = await fetch(
+        "http://localhost:3001/create-facebook-post",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            phoneNumber: phoneNumber,
+            message: message,
+            isScheduled: scheduleDate.isScheduled,
+            scheduledPublishTime: Math.floor(
+              scheduleDate.scheduledPublishTime / 1000
+            ),
+          }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      const status = await response.json();
 
-  try {
-    const response = await fetch("http://localhost:3001/create-facebook-post", {
-      method: "POST",
-      body: formData,
-    });
-    const status = await response.json();
-    return status;
-  } catch (error) {
-    console.error("Error:", error);
+      return status;
+    } catch (error) {
+      console.error("Can't post the api to create the post:", error);
+    }
   }
 };
 

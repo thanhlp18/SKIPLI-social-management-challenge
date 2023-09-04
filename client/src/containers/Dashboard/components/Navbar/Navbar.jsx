@@ -1,14 +1,7 @@
-import { MagnifyingGlassIcon, PlusIcon } from "@heroicons/react/24/solid";
-import {
-  Avatar,
-  Button,
-  ButtonGroup,
-  Input,
-  Navbar,
-} from "@material-tailwind/react";
-import CollapseBtn from "../../../../components/CollapseBtn/CollapseBtn";
+import { MagnifyingGlassIcon } from "@heroicons/react/24/solid";
+import { Button, Input, Navbar } from "@material-tailwind/react";
 import { useState } from "react";
-import SociaLoginButton from "./SocialLoginButton";
+import CollapseBtn from "../../../../components/CollapseBtn/CollapseBtn";
 import { SocialPostModal } from "../../../../components/SocialPostModal/SocialPostModal";
 // import FacebookPostForm from "../../../../components/SocialPostModal/SocialPostModal copy";
 
