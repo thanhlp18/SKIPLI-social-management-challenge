@@ -10,7 +10,7 @@ import {
   Typography,
 } from "@material-tailwind/react";
 import React from "react";
-import FacebookLoginBtn from "../../../../components/FacebookLogin/FacebookLoginBtn";
+import FacebookLoginBtn from "../../../../../components/FacebookLogin/FacebookLoginBtn";
 export default function SociaLoginButton() {
   const [open, setOpen] = React.useState(false);
 

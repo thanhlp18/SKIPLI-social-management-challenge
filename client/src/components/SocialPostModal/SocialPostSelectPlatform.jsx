@@ -34,9 +34,9 @@ export function SocialPostSelectPlatform({ handleSelect }) {
                 id="horizontal-list-react"
                 ripple={false}
                 className="hover:before:opacity-0"
-                containerProps={{
-                  className: "p-0",
-                }}
+                // containerProps={{
+                //   className: "p-0",
+                // }}
                 value={"facebook"}
                 onChange={handleCheckSocial}
               />
@@ -56,9 +56,9 @@ export function SocialPostSelectPlatform({ handleSelect }) {
                 id="horizontal-list-vue"
                 ripple={false}
                 className="hover:before:opacity-0"
-                containerProps={{
-                  className: "p-0",
-                }}
+                // containerProps={{
+                //   className: "p-0",
+                // }}
                 value={"instagram"}
                 onChange={handleCheckSocial}
               />
@@ -78,9 +78,9 @@ export function SocialPostSelectPlatform({ handleSelect }) {
                 id="horizontal-list-svelte"
                 ripple={false}
                 className="hover:before:opacity-0"
-                containerProps={{
-                  className: "p-0",
-                }}
+                // containerProps={{
+                //   className: "p-0",
+                // }}
                 value={"twitter"}
                 onChange={handleCheckSocial}
               />

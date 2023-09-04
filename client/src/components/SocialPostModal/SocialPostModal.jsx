@@ -235,9 +235,9 @@ export function SocialPostModal() {
                             id="publish-check"
                             ripple={false}
                             className="hover:before:opacity-0"
-                            containerProps={{
-                              className: "p-0",
-                            }}
+                            // containerProps={{
+                            //   className: "p-0",
+                            // }}
                             onClick={onCheckSchedulePost}
                             disabled={!!image}
                           />

@@ -6,9 +6,9 @@ import ReactLoading from "react-loading";
 
 function PostList(props) {
   const [isLoading, setIsLoading] = useState(true);
-  const [socialPosts, setSocialPost] = useState([]); // Array[{created_time,full_picture,id,isFavorite,message,permalink_url,....}]
+  const [socialPosts, setSocialPost] = useState([]); // Array[{created_time,full_picture,id,isFavorite,message,permalink_url,socialID,socialName,socialPlatform....}]
   const [initialPosts, setInitialPosts] = useState([]); // Array[{created_time,full_picture,id,isFavorite,message,permalink_url,....}]
-
+  const [accountList, setAccountList] = useState();
   const [filter, setFilter] = useState({ type: "", data: "" });
 
   const skipliAccount = JSON.parse(localStorage.getItem("skipliAccount"));
@@ -59,23 +59,25 @@ function PostList(props) {
         // FILTER BY RANGE
         case "date": {
           function filterByDateRange(socialPostArray, startDate, endDate) {
+            console.log("socialPostArray: ", socialPostArray);
             return socialPostArray.filter((post) => {
               const postDate = new Date(post.created_time);
               const start = startDate ? new Date(startDate) : null;
               const end = endDate ? new Date(endDate) : null;
 
-              // Check if the post's date is within the specified range
-              if (start && end) {
-                return postDate >= start && postDate <= end;
-              } else if (start) {
-                return postDate >= start;
-              } else if (end) {
-                return postDate <= end;
+              if (!start || !end) {
+                return false; // Return false if either start or end date is missing
               }
 
-              return false; // No date range specified, return false
+              // To compare dates, set the time of day to midnight
+              start.setHours(0, 0, 0, 0);
+              end.setHours(0, 0, 0, 0);
+              postDate.setHours(0, 0, 0, 0);
+
+              return postDate >= start && postDate <= end;
             });
           }
+
           setSocialPost(
             filterByDateRange(
               initialPosts,
@@ -83,23 +85,36 @@ function PostList(props) {
               filter.data.endDate
             )
           );
+          console.log("social posts", socialPosts);
+
           break;
         }
         // FILTER BY SOCIAL ACCOUNT
         case "socialID": {
-          function filterBySocialID(socialPostArray, id) {
-            // Convert the searchTerm to lowercase for case-insensitive search
-            id = id.toLowerCase();
+          function filterBySocialID(socialPostArray, selectSocial) {
+            console.log(socialPostArray);
+            // Ensure that valueID is an array
+            if (!Array.isArray(selectSocial)) {
+              return [];
+            }
+
+            // Convert the search values to lowercase for case-insensitive search
+            const lowercasedSelectID = selectSocial.map((id) =>
+              id.toLowerCase()
+            );
 
             return socialPostArray.filter((post) => {
-              if (post.postSocialID) {
-                const postSocialID = post.message.toLowerCase();
-                return postSocialID.equals(id);
+              if (post.socialID) {
+                const socialID = post.socialID.toLowerCase();
+                // Use `includes` or `some` to check if the postSocialID is in the array
+                return lowercasedSelectID.includes(socialID);
               }
 
               return false;
             });
           }
+          // console.log(socialPostArray);
+          setSocialPost(filterBySocialID(initialPosts, filter.data));
           break;
         }
         default:
@@ -107,16 +122,35 @@ function PostList(props) {
       }
     }
   }, [filter]);
-  console.log("Initial POST: ", initialPosts);
-  console.log("Render POST: ", socialPosts);
+
   // Add post to favortie
   const handleClickFavorite = (id, social) => {
     createFavoritePostApi(skipliAccount.userPhoneNumber, social, id);
   };
-  console.log(filter);
+
+  // Get social account
+  useEffect(() => {
+    const accountsObject = {};
+    initialPosts.forEach((post, index) => {
+      if (!accountsObject[post.socialID]) {
+        accountsObject[post.socialID] = post.socialName;
+      }
+      //
+    });
+    const accountArray = Object.keys(accountsObject).map((socialID, index) => ({
+      label: accountsObject[socialID],
+      value: socialID,
+    }));
+    setAccountList(accountArray);
+  }, [initialPosts]);
+
   return (
     <div className="h-full w-full">
-      <NavbarDashboard onFilter={setFilter} />
+      <NavbarDashboard
+        onFilter={setFilter}
+        className="z-50"
+        accountList={accountList}
+      />
       {isLoading ? (
         <div className=" flex h-[75%] w-full flex-col items-center justify-center ">
           <ReactLoading color={"#000"} height={"8rem"} width={"8rem"} />
@@ -126,7 +160,7 @@ function PostList(props) {
           </div>
         </div>
       ) : (
-        <div className="xs:grid-cols-1 grid  gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="xs:grid-cols-1 z-0 grid  gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {socialPosts.map((post, index) => (
             <SocialPost
               pageData={{

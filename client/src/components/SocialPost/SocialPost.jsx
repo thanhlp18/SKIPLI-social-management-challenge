@@ -126,7 +126,7 @@ export default function SocialPost(props) {
     // <Card className="w-full max-w-[16rem]  break-before-column rounded-none border border-gray-100 shadow-sm">
     <Card
       className={clsx(
-        "w-full max-w-[16rem] break-inside-avoid-column rounded-none border border-gray-100 shadow-sm	",
+        "z-0 w-full max-w-[16rem] break-inside-avoid-column rounded-none border border-gray-100 shadow-sm	",
         className
       )}
     >
