@@ -29,7 +29,6 @@ function PostList(props) {
 
   // Handle filter
   useEffect(() => {
-    console.log("filter");
     if (socialPosts.length > 0) {
       switch (filter.type) {
         // FILTER BY NAME
@@ -80,12 +79,27 @@ function PostList(props) {
           );
           break;
         }
+        // FILTER BY SOCIAL ACCOUNT
+        case "socialID": {
+          function filterBySocialID(socialPostArray, id) {
+            // Convert the searchTerm to lowercase for case-insensitive search
+            id = id.toLowerCase();
+
+            return socialPostArray.filter((post) => {
+              if (post.postSocialID) {
+                const postSocialID = post.message.toLowerCase();
+                return postSocialID.equals(id);
+              }
+
+              return false;
+            });
+          }
+          break;
+        }
         default:
           break;
       }
       console.log("Run filter");
-
-      // FILTER BY SOCIAL ACCOUNT
     }
   }, [filter]);
 
@@ -97,7 +111,7 @@ function PostList(props) {
 
   return (
     <div>
-      <NavbarDashboard />
+      <NavbarDashboard onFilter={setFilter} />
       <div className="xs:grid-cols-1 grid  gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {/* <div className="flex flex-wrap gap-4"> */}
         {/* <div className=" xs:columns-1 gap-4 sm:columns-2 lg:columns-3 xl:columns-4"> */}

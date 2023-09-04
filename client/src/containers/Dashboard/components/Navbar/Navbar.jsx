@@ -1,11 +1,21 @@
 import { MagnifyingGlassIcon } from "@heroicons/react/24/solid";
-import { Button, Input, Navbar } from "@material-tailwind/react";
+import {
+  Button,
+  Checkbox,
+  Input,
+  List,
+  ListItem,
+  ListItemPrefix,
+  Navbar,
+  Typography,
+} from "@material-tailwind/react";
 import { useState } from "react";
 import CollapseBtn from "../../../../components/CollapseBtn/CollapseBtn";
 import { SocialPostModal } from "../../../../components/SocialPostModal/SocialPostModal";
 // import FacebookPostForm from "../../../../components/SocialPostModal/SocialPostModal copy";
 
-export default function NavbarDashboard() {
+export default function NavbarDashboard(props) {
+  const { onFilter } = props;
   const [socialAccount, setSocialAccount] = useState([]);
   const [isCreatePost, SetIsCreatePost] = useState(false);
 
@@ -23,6 +33,8 @@ export default function NavbarDashboard() {
       name: "Le Phuoc Thanh",
     },
   ];
+
+  const handleFilter = () => {};
   console.log(isCreatePost);
   return (
     <Navbar className=" flex  flex-col  items-start justify-between gap-3 rounded-none  border border-gray-200 px-4 py-3 shadow-none">
@@ -80,7 +92,32 @@ export default function NavbarDashboard() {
             btnClass="rounded-md"
             cardClass={"border border-gray-50 "}
           >
-            fasdf
+            {/* <List className="ml-[-0.5rem] flex-row justify-start p-0">
+              <ListItem className="w-fit p-0">
+                <label
+                  htmlFor="publish-check"
+                  className="flex w-full cursor-pointer items-center p-2"
+                >
+                  <ListItemPrefix className="mr-1.5">
+                    <Checkbox
+                      id="publish-check"
+                      ripple={false}
+                      className="hover:before:opacity-0"
+                      containerProps={{
+                        className: "p-0",
+                      }}
+                    />
+                  </ListItemPrefix>
+
+                  <Typography
+                    color="blue-gray"
+                    className="text-sm font-semibold"
+                  >
+                    Schedule post
+                  </Typography>
+                </label>
+              </ListItem>
+            </List> */}
           </CollapseBtn>
         </div>
         <div className="ml-auto ">

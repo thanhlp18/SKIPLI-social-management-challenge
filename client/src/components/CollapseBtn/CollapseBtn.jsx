@@ -12,7 +12,7 @@ import PropTypes from "prop-types";
 // };
 
 export default function CollapseBtn(props) {
-  const { label, btnClass, cardClass, collapseClass } = props;
+  const { label, btnClass, cardClass, collapseClass, children = <></> } = props;
   const [open, setOpen] = React.useState(false);
 
   const toggleOpen = () => setOpen((cur) => !cur);
@@ -26,9 +26,7 @@ export default function CollapseBtn(props) {
         <Card
           className={clsx("rounded-none bg-gray-50 shadow-none", cardClass)}
         >
-          <CardBody>
-            ({props.children} ? {props.children} : <></>)
-          </CardBody>
+          <CardBody>{children}</CardBody>
         </Card>
       </Collapse>
     </div>

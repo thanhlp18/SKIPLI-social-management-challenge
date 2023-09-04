@@ -13,8 +13,8 @@ import twitterLogo from "../../../assets/twitter-logo.svg";
 import FacebookLoginBtn from "../../../components/FacebookLogin/FacebookLoginBtn";
 
 export default function Account(props) {
-  const { profileImage, userName, socialPlaform, socialDescription } = props;
-  console.log(props);
+  const { profileImage, userName, socialPlatform } = props;
+  console.log(socialPlatform);
   const social = {
     facebook: {
       name: "Facebook",
@@ -48,13 +48,14 @@ export default function Account(props) {
     <Card className="justify w-full border border-gray-200 shadow-sm">
       <CardHeader shadow={false} floated={false} className="h-fit p-4">
         <img
-          src={social[socialPlaform].logo}
+          src={social[socialPlatform].logo}
           className="w-full  px-2 text-white"
+          alt="socail platform logo"
         />
       </CardHeader>
       <CardBody className="flex flex-1 flex-col gap-2 p-4">
         <Typography color="blue-gray" className="font-medium">
-          {social[socialPlaform].name}
+          {social[socialPlatform].name}
         </Typography>
         {userName && (
           <Tooltip content={userName}>
@@ -89,7 +90,7 @@ export default function Account(props) {
             {"LOG OUT"}
           </Button>
         ) : (
-          social[socialPlaform].loginBtn
+          social[socialPlatform].loginBtn
         )}
       </CardFooter>
     </Card>

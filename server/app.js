@@ -560,7 +560,7 @@ app.post("/get-social-accounts", async (req, res) => {
   console.log("USER PHONE NUMBER: ", phoneNumber);
   var accountsData = {
     facebook: {
-      socialPlaform: "facebook",
+      socialPlatform: "facebook",
       isLogin: false,
       name: "",
       id: "",
@@ -568,7 +568,7 @@ app.post("/get-social-accounts", async (req, res) => {
       profileImage: "",
     },
     instagram: {
-      socialPlaform: "instagram",
+      socialPlatform: "instagram",
       isLogin: false,
       name: "",
       id: "",
@@ -576,7 +576,7 @@ app.post("/get-social-accounts", async (req, res) => {
       profileImage: "",
     },
     twitter: {
-      socialPlaform: "twitter",
+      socialPlatform: "twitter",
       isLogin: false,
       name: "",
       id: "",
@@ -621,7 +621,7 @@ app.post("/get-social-accounts", async (req, res) => {
           accountsData = {
             ...accountsData,
             facebook: {
-              socialPlaform: "facebook",
+              socialPlatform: "facebook",
               isLogin: true,
               name: userPublicInformation.name,
               id: facebookAccountAuth.userID,

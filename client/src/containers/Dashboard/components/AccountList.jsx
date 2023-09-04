@@ -7,12 +7,12 @@ import { getSocialAccount } from "../../../api/socialApi";
 
 function AccountList(props) {
   const skipliAccount = JSON.parse(localStorage.getItem("skipliAccount"));
-  const [socialAccount, setSocialAccount] = useState([]);
+  const [socialAccounts, setSocialAccounts] = useState([]);
 
   useEffect(() => {
     getSocialAccount(skipliAccount.userPhoneNumber)
       .then((data) => {
-        setSocialAccount(data);
+        setSocialAccounts(data);
       })
       .catch((error) => {
         console.error("Error fetching social account data: ", error);
@@ -23,11 +23,11 @@ function AccountList(props) {
     <div>
       <NavbarDashboard />
       <div className="xs:grid-cols-2 grid  gap-4 p-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-        {socialAccount.map((socialAccount, index) => (
+        {socialAccounts.map((account, index) => (
           <Account
-            socialPlaform={socialAccount.socialPlaform}
-            profileImage={socialAccount.profileImage}
-            userName={socialAccount.name}
+            socialPlatform={account.socialPlatform}
+            profileImage={account.profileImage}
+            userName={account.userName}
             key={`social-account-${index}`}
           />
         ))}
