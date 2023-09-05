@@ -183,10 +183,9 @@ const LoginSocialFacebook = ({
     if (isSdkLoaded && _window.FB) {
       _window.FB.getLoginStatus(function (response) {
         if (response.status === "connected") {
-          var accessToken = response.authResponse.accessToken;
-          console.log(accessToken);
+          console.log({ social: "facebook", connected: true });
         } else {
-          console.log(response);
+          return { social: "facebook", connected: false };
         }
       });
     }

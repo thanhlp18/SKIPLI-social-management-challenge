@@ -21,6 +21,7 @@ const {
   getDoc,
   doc,
   serverTimestamp,
+  Timestamp,
   updateDoc,
 } = require("firebase/firestore");
 const firebaseConfig = require("./.firebaseConfig/firebaseConfig.json");
@@ -114,6 +115,299 @@ app.post("/validate-access-code", async (req, res) => {
 });
 
 // END OTP handle
+
+//START Account api
+// GET accounts api
+app.post("/get-social-accounts", async (req, res) => {
+  const phoneNumber = req.body.phoneNumber;
+  console.log("USER PHONE NUMBER: ", phoneNumber);
+  var accountsData = {
+    facebook: {
+      socialPlatform: "facebook",
+      isLogin: false,
+      name: "",
+      id: "",
+      loginExpire: "",
+      profileImage: "",
+    },
+    instagram: {
+      socialPlatform: "instagram",
+      isLogin: false,
+      name: "",
+      id: "",
+      loginExpire: "",
+      profileImage: "",
+    },
+    twitter: {
+      socialPlatform: "twitter",
+      isLogin: false,
+      name: "",
+      id: "",
+      loginExpire: "",
+      profileImage: "",
+    },
+  };
+
+  try {
+    // Connect to database
+    const usersRef = doc(db, "users", phoneNumber);
+    const docSnap = await getDoc(usersRef);
+    if (docSnap) console.log("---DATA BASE CONNECTED---");
+    // Get social account data from firebase
+    if (docSnap.exists()) {
+      var facebookAccount = docSnap.data().facebook;
+      var instagramAccount = docSnap.data().instagram;
+      var twitterAccount = docSnap.data().twitter;
+      console.log(accountsData.facebook);
+      try {
+        // Get facebook data from firebase
+        const facebookAccountAuth = facebookAccount.auth;
+        // Get server time to check is account token expired
+        const serverTime = Timestamp.fromDate(new Date()).seconds;
+        const accountExpireTime =
+          facebookAccountAuth.data_access_expiration_time;
+
+        // Check expired login time of use
+        if (serverTime < accountExpireTime) {
+          console.log(serverTime < accountExpireTime);
+          accountsData = {
+            ...accountsData,
+            facebook: {
+              isLogin: true,
+              userName: "",
+              id: facebookAccountAuth.userID,
+              loginExpire: facebookAccountAuth.data_access_expiration_time,
+              profileImage: "",
+            },
+          };
+        }
+
+        // Get facebook profile image from facebook api
+
+        try {
+          const userPublicInformationRes = await fetch(
+            `https://graph.facebook.com/v17.0/me?fields=id%2Cname%2Cpicture&access_token=${facebookAccountAuth.accessToken}`
+          );
+
+          const userPublicInformation = await userPublicInformationRes.json();
+          accountsData = {
+            ...accountsData,
+            facebook: {
+              ...accountsData.facebook,
+              isLogin: true,
+              userName: userPublicInformation.name,
+              id: facebookAccountAuth.userID,
+              loginExpire: facebookAccountAuth.data_access_expiration_time,
+              profileImage: userPublicInformation.picture.data.url,
+            },
+          };
+        } catch (err) {
+          console.error("Can not get user profile image: ", err);
+        }
+      } catch (error) {
+        console.error("User does not login to facebook account!");
+      }
+      try {
+        const instagramAccountAuth = instagramAccount.auth;
+        // Get server time to check is account token expired
+        const serverTime = Timestamp.fromDate(new Date()).seconds;
+        const accountExpireTime =
+          instagramAccountAuth.data_access_expiration_time;
+
+        // Check expired login time of use
+        if (serverTime < accountExpireTime) {
+          accountsData = {
+            ...accountsData,
+            facebook: {
+              isLogin: true,
+              userName: "",
+              id: instagramAccountAuth.userID,
+              loginExpire: instagramAccountAuth.data_access_expiration_time,
+              profileImage: "",
+            },
+          };
+        }
+      } catch (error) {
+        console.error("User does not login to instagram account!");
+      }
+      try {
+        const twitterAccountAuth = twitterAccount.auth;
+        // Get server time to check is account token expired
+        const serverTime = Timestamp.fromDate(new Date()).seconds;
+        const accountExpireTime =
+          twitterAccountAuth.data_access_expiration_time;
+
+        // Check expired login time of use
+        if (serverTime < accountExpireTime) {
+          accountsData = {
+            ...accountsData,
+            facebook: {
+              isLogin: true,
+              userName: "",
+              id: twitterAccountAuth.userID,
+              loginExpire: twitterAccountAuth.data_access_expiration_time,
+              profileImage: "",
+            },
+          };
+        }
+      } catch (error) {
+        console.error("User does not login to twitter account!");
+      }
+    } else {
+      throw Error("Phon number isn't valid!");
+    }
+
+    res.json(Object.values(accountsData));
+  } catch (e) {
+    console.error("Can't get social account data: ", e);
+  }
+});
+
+app.post("/get-social-accounts-login-status", async (req, res) => {
+  const phoneNumber = req.body.phoneNumber;
+  var accountsData = {
+    facebook: {
+      socialPlatform: "facebook",
+      isLogin: false,
+      name: "",
+      id: "",
+      loginExpire: "",
+      profileImage: "",
+    },
+    instagram: {
+      socialPlatform: "instagram",
+      isLogin: false,
+      name: "",
+      id: "",
+      loginExpire: "",
+      profileImage: "",
+    },
+    twitter: {
+      socialPlatform: "twitter",
+      isLogin: false,
+      name: "",
+      id: "",
+      loginExpire: "",
+      profileImage: "",
+    },
+  };
+
+  try {
+    // Connect to database
+    const usersRef = doc(db, "users", phoneNumber);
+    const docSnap = await getDoc(usersRef);
+    var loginStatus = {
+      facebook: {
+        isLogin: false,
+        message: "User does not login to facebook account!",
+      },
+      instagram: {
+        isLogin: false,
+        message: "User does not login to instagram account!",
+      },
+      twitter: {
+        isLogin: false,
+        message: "User does not login to twitter account!",
+      },
+    };
+    // Get social account data from firebase
+    if (docSnap.exists()) {
+      var facebookAccount = docSnap.data().facebook;
+      var instagramAccount = docSnap.data().instagram;
+      var twitterAccount = docSnap.data().twitter;
+
+      // CHECK FACEBOOK ACCOUNT
+      try {
+        // Get facebook data from firebase
+        const facebookAccountAuth = facebookAccount.auth;
+
+        // Get server time to check is account token expired
+        const serverTime = Timestamp.fromDate(new Date()).seconds;
+        const accountExpireTime =
+          facebookAccountAuth.data_access_expiration_time;
+
+        // Check expired login time of use
+        if (serverTime < accountExpireTime) {
+          loginStatus = {
+            ...loginStatus,
+            facebook: {
+              isLogin: true,
+              message: "",
+            },
+          };
+        } else {
+          loginStatus = {
+            ...loginStatus,
+            facebook: {
+              isLogin: false,
+              message: "User login session is expired",
+            },
+          };
+        }
+      } catch (error) {
+        console.error("User does not login to facebook account!");
+      }
+
+      // CHECK instagram ACCOUNT
+      try {
+        // Get instagram data from firebase
+        const instagramAccountAuth = instagramAccount.auth;
+
+        // Get server time to check is account token expired
+        const serverTime = Timestamp.fromDate(new Date()).seconds;
+        const accountExpireTime =
+          instagramAccountAuth.data_access_expiration_time;
+
+        // Check expired login time of use
+        if (serverTime < accountExpireTime) {
+          loginStatus = {
+            ...loginStatus,
+            instagram: {
+              isLogin: true,
+              message: "",
+            },
+          };
+        } else {
+          loginStatus = {
+            ...loginStatus,
+            instagram: {
+              isLogin: false,
+              message: "User login session is expired",
+            },
+          };
+        }
+      } catch (error) {
+        console.error("User does not login to instagram account!");
+      }
+    } else {
+      throw Error("Phon number isn't valid!");
+    }
+
+    res.json(Object.values(loginStatus));
+  } catch (e) {
+    console.error("Can't get social account data: ", e);
+  }
+});
+
+// app.get("/get-social-accounts-login-status", async (req, res) => {
+//   const phoneNumber = req.body.phoneNumber;
+//   if (!phoneNumber) res.send({ type: err, message: "Invalid phone number" });
+//   try {
+//     // Connect to database
+//     const usersRef = doc(db, "users", phoneNumber);
+//     const docSnap = await getDoc(usersRef);
+//     if (docSnap) console.log("---DATA BASE CONNECTED---");
+//     if (docSnap.exists()) {
+//       var facebookAccount = docSnap.data().facebook;
+//       var instagramAccount = docSnap.data().instagram;
+//       var twitterAccount = docSnap.data().twitter;
+//     }
+//   } catch (err) {
+//     console.log("Can not connect to the data base");
+//   }
+// });
+
+//EDN Account api
 
 //START Facebook API handle
 // Facebook login handle
@@ -552,129 +846,6 @@ app.get("/get-favorite-posts", async (req, res) => {
 });
 
 //END Facebook API handle
-
-//START Account api
-// GET accounts api
-app.post("/get-social-accounts", async (req, res) => {
-  const phoneNumber = req.body.phoneNumber;
-  console.log("USER PHONE NUMBER: ", phoneNumber);
-  var accountsData = {
-    facebook: {
-      socialPlatform: "facebook",
-      isLogin: false,
-      name: "",
-      id: "",
-      loginExpire: "",
-      profileImage: "",
-    },
-    instagram: {
-      socialPlatform: "instagram",
-      isLogin: false,
-      name: "",
-      id: "",
-      loginExpire: "",
-      profileImage: "",
-    },
-    twitter: {
-      socialPlatform: "twitter",
-      isLogin: false,
-      name: "",
-      id: "",
-      loginExpire: "",
-      profileImage: "",
-    },
-  };
-
-  try {
-    // Connect to database
-    const usersRef = doc(db, "users", phoneNumber);
-    const docSnap = await getDoc(usersRef);
-    if (docSnap) console.log("---DATA BASE CONNECTED---");
-    // Get social account data from firebase
-    if (docSnap.exists()) {
-      var facebookAccount = docSnap.data().facebook;
-      var instagramAccount = docSnap.data().instagram;
-      var twitterAccount = docSnap.data().twitter;
-      try {
-        // Get facebook data from firebase
-        const facebookAccountAuth = facebookAccount.auth;
-        accountsData = {
-          ...accountsData,
-          facebook: {
-            isLogin: true,
-            userName: "",
-            id: facebookAccountAuth.userID,
-            loginExpire: facebookAccountAuth.data_access_expiration_time,
-            profileImage: "",
-          },
-        };
-        console.log(
-          "GET FACEBOOK DATA SUCCESSFULLY! ",
-          facebookAccountAuth.accessToken
-        );
-        // Get facebook profile image from facebook api
-        try {
-          const userPublicInformationRes = await fetch(
-            `https://graph.facebook.com/v17.0/me?fields=id%2Cname%2Cpicture&access_token=${facebookAccountAuth.accessToken}`
-          );
-          const userPublicInformation = await userPublicInformationRes.json();
-          accountsData = {
-            ...accountsData,
-            facebook: {
-              socialPlatform: "facebook",
-              isLogin: true,
-              userName: userPublicInformation.name,
-              id: facebookAccountAuth.userID,
-              loginExpire: facebookAccountAuth.data_access_expiration_time,
-              profileImage: userPublicInformation.picture.data.url,
-            },
-          };
-        } catch (err) {
-          console.error("Can not get user profile image: ", err);
-        }
-      } catch (error) {
-        console.error("User does not login to facebook account!");
-      }
-      try {
-        const instagramAccountAuth = instagramAccount.auth;
-        accountsData = {
-          ...accountsData,
-          facebook: {
-            isLogin: true,
-            userName: "",
-            id: instagramAccountAuth.userID,
-            loginExpire: instagramAccountAuth.data_access_expiration_time,
-            profileImage: "",
-          },
-        };
-      } catch (error) {
-        console.error("User does not login to instagram account!");
-      }
-      try {
-        const twitterAccountAuth = twitterAccount.auth;
-        accountsData = {
-          ...accountsData,
-          facebook: {
-            isLogin: true,
-            userName: "",
-            id: twitterAccountAuth.userID,
-            loginExpire: twitterAccountAuth.data_access_expiration_time,
-            profileImage: "",
-          },
-        };
-      } catch (error) {
-        console.error("User does not login to twitter account!");
-      }
-    } else {
-      throw Error("Phon number isn't valid!");
-    }
-
-    res.json(Object.values(accountsData));
-  } catch (e) {
-    console.error("Can't get social account data: ", e);
-  }
-});
-//EDN Account api
 
 // Start the server
 const port = process.env.PORT || 3001;

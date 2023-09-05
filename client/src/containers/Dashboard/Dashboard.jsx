@@ -7,7 +7,7 @@ function Dashboard() {
   return (
     <div className="grid grid-cols-5 ">
       <div>
-        <FacebookLoginBtn />
+        {/* <FacebookLoginBtn /> */}
         <Sidebar className="col-span-1" />
       </div>
       <div className="col-span-4">

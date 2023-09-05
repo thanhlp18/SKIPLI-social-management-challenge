@@ -4,20 +4,27 @@ import Account from "./Account";
 import { useSelector } from "react-redux";
 import logo from "../../../assets/logo.svg";
 import { getSocialAccount } from "../../../api/socialApi";
+import { useNavigate } from "react-router-dom";
 
 function AccountList(props) {
   const skipliAccount = JSON.parse(localStorage.getItem("skipliAccount"));
   const [socialAccounts, setSocialAccounts] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    getSocialAccount(skipliAccount.userPhoneNumber)
-      .then((data) => {
-        setSocialAccounts(data);
-      })
-      .catch((error) => {
-        console.error("Error fetching social account data: ", error);
-      });
+    if (skipliAccount) {
+      getSocialAccount(skipliAccount.userPhoneNumber)
+        .then((data) => {
+          setSocialAccounts(data);
+        })
+        .catch((error) => {
+          console.error("Error fetching social account data: ", error);
+        });
+    } else {
+      navigate("/login");
+    }
   }, []);
+  console.log("Accounts List: ", socialAccounts);
 
   return (
     <div>

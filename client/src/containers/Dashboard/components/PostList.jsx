@@ -3,8 +3,10 @@ import { createFavoritePostApi, getPostFacebook } from "../../../api/socialApi";
 import SocialPost from "../../../components/SocialPost/SocialPost";
 import NavbarDashboard from "./Navbar/Navbar";
 import ReactLoading from "react-loading";
+import { useNavigate } from "react-router-dom";
 
 function PostList(props) {
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [socialPosts, setSocialPost] = useState([]); // Array[{created_time,full_picture,id,isFavorite,message,permalink_url,socialID,socialName,socialPlatform....}]
   const [initialPosts, setInitialPosts] = useState([]); // Array[{created_time,full_picture,id,isFavorite,message,permalink_url,....}]
@@ -12,6 +14,13 @@ function PostList(props) {
   const [filter, setFilter] = useState({ type: "", data: "" });
 
   const skipliAccount = JSON.parse(localStorage.getItem("skipliAccount"));
+
+  // Check whether use login skipli account, if false, navigate use to login page
+  useEffect(() => {
+    if (!skipliAccount) {
+      navigate("/login");
+    }
+  }, []);
 
   // Get facebook post from api
   useEffect(() => {
