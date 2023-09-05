@@ -298,14 +298,17 @@ app.post("/get-social-accounts-login-status", async (req, res) => {
     const docSnap = await getDoc(usersRef);
     var loginStatus = {
       facebook: {
+        socialPlatform: "facebook",
         isLogin: false,
         message: "User does not login to facebook account!",
       },
       instagram: {
+        socialPlatform: "instagram",
         isLogin: false,
         message: "User does not login to instagram account!",
       },
       twitter: {
+        socialPlatform: "twitter",
         isLogin: false,
         message: "User does not login to twitter account!",
       },
@@ -331,6 +334,7 @@ app.post("/get-social-accounts-login-status", async (req, res) => {
           loginStatus = {
             ...loginStatus,
             facebook: {
+              socialPlatform: "facebook",
               isLogin: true,
               message: "",
             },
@@ -339,6 +343,7 @@ app.post("/get-social-accounts-login-status", async (req, res) => {
           loginStatus = {
             ...loginStatus,
             facebook: {
+              socialPlatform: "facebook",
               isLogin: false,
               message: "User login session is expired",
             },
@@ -363,6 +368,7 @@ app.post("/get-social-accounts-login-status", async (req, res) => {
           loginStatus = {
             ...loginStatus,
             instagram: {
+              socialPlatform: "instagram",
               isLogin: true,
               message: "",
             },
@@ -371,6 +377,7 @@ app.post("/get-social-accounts-login-status", async (req, res) => {
           loginStatus = {
             ...loginStatus,
             instagram: {
+              socialPlatform: "instagram",
               isLogin: false,
               message: "User login session is expired",
             },
@@ -389,38 +396,20 @@ app.post("/get-social-accounts-login-status", async (req, res) => {
   }
 });
 
-// app.get("/get-social-accounts-login-status", async (req, res) => {
-//   const phoneNumber = req.body.phoneNumber;
-//   if (!phoneNumber) res.send({ type: err, message: "Invalid phone number" });
-//   try {
-//     // Connect to database
-//     const usersRef = doc(db, "users", phoneNumber);
-//     const docSnap = await getDoc(usersRef);
-//     if (docSnap) console.log("---DATA BASE CONNECTED---");
-//     if (docSnap.exists()) {
-//       var facebookAccount = docSnap.data().facebook;
-//       var instagramAccount = docSnap.data().instagram;
-//       var twitterAccount = docSnap.data().twitter;
-//     }
-//   } catch (err) {
-//     console.log("Can not connect to the data base");
-//   }
-// });
-
 //EDN Account api
 
 //START Facebook API handle
 // Facebook login handle
-app.post("/loginFacebook", async (req, res) => {
+app.post("/login-meta", async (req, res) => {
   // console.log(req.body);
-  const facebookAuth = req.body.facebook;
+  const metaAuth = req.body.meta;
+  const socialPlatform = req.body.socialPlatform;
   const phoneNumber = req.body.phoneNumber;
-  console.log("LOGIN SUCCESSFULL: ", phoneNumber);
+  console.log("socialPlatform: ", socialPlatform);
 
   // Connect to firebase
   const usersRef = doc(db, "users", phoneNumber);
   const userSnap = await getDoc(usersRef);
-  const facebookData = userSnap.data().facebook;
 
   // Request page was manage by user
   // const pageResponse = await fetch(
@@ -431,18 +420,65 @@ app.post("/loginFacebook", async (req, res) => {
 
   // console.log(await pageResponse.json());
 
+  console.log(userSnap.data()[socialPlatform]);
   try {
     const userRef = await updateDoc(doc(db, "users", phoneNumber), {
-      facebook: {
-        ...facebookData,
-        auth: facebookAuth,
-        // page: pageData,
+      [socialPlatform]: {
+        ...userSnap.data()[socialPlatform],
+        auth: metaAuth,
       },
-    }).then(() => {
-      res.json({ success: true }); // Send the data back to the client
     });
+
+    if (socialPlatform === "facebook") {
+      res.json({ success: true });
+    }
   } catch (e) {
-    console.error("Error adding document: ", error);
+    console.error("Can not login to facebook: ", error);
+  }
+  if (socialPlatform === "instagram") {
+    console.log("SAVE THE INSTAGRAM ACCOUNT TO THE DATABASE");
+    // If the platform is instagram, get the instagram
+    try {
+      // GET userAccessToken and userID from database
+      userAccessToken = metaAuth.accessToken;
+      userID = metaAuth.userID;
+      // Get the User's Pages
+      const userPageResponse = await fetch(
+        `https://graph.facebook.com/v17.0/${userID}/accounts?access_token=${userAccessToken}`
+      );
+
+      const userPageData = await userPageResponse.json();
+
+      // NEED TO IMPROVE IN THE FUTURE **********************************
+      // Get the Page's Instagram Business Account with the use page id
+      const userPageId = userPageData.data[0].id;
+      const instagramBAResponse = await fetch(
+        `https://graph.facebook.com/v17.0/${userPageId}?fields=instagram_business_account&access_token=${userAccessToken}`
+      );
+      const instagramBAData = await instagramBAResponse.json();
+      const instagramBAID = instagramBAData.instagram_business_account.id;
+
+      // Save the instagram business account to firebase
+      // console.log(
+      //   "userSnap.data()[socialPlatform] ",
+      //   userSnap.data()[socialPlatform].auth
+      // );
+      const userRef = await updateDoc(doc(db, "users", phoneNumber), {
+        [socialPlatform]: {
+          ...userSnap.data()[socialPlatform],
+          auth: {
+            ...metaAuth,
+            instagram_business_account_id: instagramBAID,
+          },
+          // page: pageData,
+        },
+      });
+
+      res.json({ success: true });
+    } catch (err) {
+      console.error("Can not find instagram id: ", err);
+    }
+    res.json({ success: true }); // Send the status back to the client
   }
 });
 
@@ -846,6 +882,8 @@ app.get("/get-favorite-posts", async (req, res) => {
 });
 
 //END Facebook API handle
+
+// START Instagram API handle
 
 // Start the server
 const port = process.env.PORT || 3001;

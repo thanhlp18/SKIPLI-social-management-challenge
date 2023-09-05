@@ -27,10 +27,8 @@ export default function Sidebar() {
       </div>
       <List className=" min-w-[200px]">
         <ListItem
-          className={
-            location.pathname === "/posts" ? "bg-gray-900 text-white" : ""
-          }
-          onClick={() => navagte("/posts")}
+          className={location.pathname === "/" ? "bg-gray-900 text-white" : ""}
+          onClick={() => navagte("/")}
         >
           <ListItemPrefix>
             <Square2StackIcon className="h-5 w-5" />

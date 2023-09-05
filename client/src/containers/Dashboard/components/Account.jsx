@@ -12,10 +12,13 @@ import instagramLogo from "../../../assets/instagram-logo.svg";
 import twitterLogo from "../../../assets/twitter-logo.svg";
 import FacebookLoginBtn from "../../../components/FacebookLogin/FacebookLoginBtn";
 import LoginSocialFacebook from "../../../components/FacebookLogin/LoginSocialFacebook";
+import { useState } from "react";
+import InstagramLoginBtn from "../../../components/FacebookLogin/InstagramLoginBtn";
 
 export default function Account(props) {
   const { profileImage, userName, socialPlatform = "facebook" } = props;
-  console.log(socialPlatform);
+  const [loginStatus, setLoginStatus] = useState(false);
+  console.log("login status: ", loginStatus);
   const social = {
     facebook: {
       name: "Facebook",
@@ -23,7 +26,10 @@ export default function Account(props) {
         "Schedule posts, analyze engagement, and automate tasks with ease.",
       logo: facebookLogo,
       loginBtn: (
-        <FacebookLoginBtn className="w-full overflow-hidden rounded-full p-0 " />
+        <FacebookLoginBtn
+          className="w-full overflow-hidden rounded-full p-0 "
+          onLogin={setLoginStatus}
+        />
       ),
       logoutBtn: (
         <Button
@@ -42,7 +48,10 @@ export default function Account(props) {
         "Schedule posts, analyze engagement, and automate tasks with ease.",
       logo: instagramLogo,
       loginBtn: (
-        <FacebookLoginBtn className="w-full overflow-hidden rounded-full p-0 " />
+        <InstagramLoginBtn
+          className="w-full overflow-hidden rounded-full p-0 "
+          onLogin={setLoginStatus}
+        />
       ),
       logoutBtn: (
         <Button
@@ -61,7 +70,10 @@ export default function Account(props) {
         "Schedule posts, analyze engagement, and automate tasks with ease.",
       logo: twitterLogo,
       loginBtn: (
-        <FacebookLoginBtn className="w-full overflow-hidden rounded-full p-0 " />
+        <FacebookLoginBtn
+          className="w-full overflow-hidden rounded-full p-0 "
+          onLogin={setLoginStatus}
+        />
       ),
       logoutBtn: (
         <Button

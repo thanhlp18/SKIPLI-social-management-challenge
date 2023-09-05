@@ -1,12 +1,13 @@
-export const loginFacebookApi = (facebookAuth, phoneNumber) => {
+export const loginFacebookApi = (metaAuth, phoneNumber, socialPlatform) => {
   return new Promise((resolve, reject) => {
     // Create a JSON object with the phone number
     const requestBody = {
-      facebook: { ...facebookAuth },
+      socialPlatform: socialPlatform,
+      meta: { ...metaAuth },
       phoneNumber: phoneNumber,
     };
 
-    fetch("http://localhost:3001/loginFacebook", {
+    fetch("http://localhost:3001/login-meta", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -139,6 +140,33 @@ export const createFavoritePostApi = (phoneNumber, social, postId) => {
 
 export const getSocialAccount = (phoneNumber) => {
   return fetch("http://localhost:3001/get-social-accounts", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      phoneNumber: phoneNumber,
+    }), // Send the JSON data in the request body
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      return response.json();
+    })
+    .then((data) => {
+      return data;
+    })
+    .catch((error) => {
+      // Handle errors
+      console.error(error);
+      throw error;
+    });
+};
+
+export const getSocialAccountLoginStatus = (phoneNumber) => {
+  return fetch("http://localhost:3001/get-social-accounts-login-status", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

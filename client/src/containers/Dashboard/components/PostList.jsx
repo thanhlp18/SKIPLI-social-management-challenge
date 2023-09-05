@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { createFavoritePostApi, getPostFacebook } from "../../../api/socialApi";
+import {
+  createFavoritePostApi,
+  getPostFacebook,
+  getSocialAccountLoginStatus,
+} from "../../../api/socialApi";
 import SocialPost from "../../../components/SocialPost/SocialPost";
 import NavbarDashboard from "./Navbar/Navbar";
 import ReactLoading from "react-loading";
@@ -17,8 +21,26 @@ function PostList(props) {
 
   // Check whether use login skipli account, if false, navigate use to login page
   useEffect(() => {
-    if (!skipliAccount) {
-      navigate("/login");
+    if (skipliAccount) {
+      const fetchData = async () => {
+        try {
+          const response = await getSocialAccountLoginStatus(
+            skipliAccount.userPhoneNumber
+          );
+          var isLoginSocial = false;
+          response.map((social, index) => {
+            if (social.isLogin) {
+              isLoginSocial = true;
+            }
+          });
+          // If user doen't login any social account, navigate them to accounts list
+          if (!isLoginSocial) navigate("/accounts");
+        } catch (error) {
+          console.error("Error fetching data:", error);
+        }
+      };
+
+      fetchData();
     }
   }, []);
 

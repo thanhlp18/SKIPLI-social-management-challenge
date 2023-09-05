@@ -70,7 +70,7 @@ const SignIn = () => {
             ),
             { duration: 700 }
           );
-          navigate("/posts");
+          navigate("/accounts");
           // save user input to local storage
           localStorage.setItem(
             "skipliAccount",

@@ -32,6 +32,7 @@ const LoginSocialFacebook = ({
   return_scopes = true,
   isOnlyGetToken = false,
   children,
+  socialPlatform,
 }) => {
   const scriptNodeRef = useRef(null);
   const [isSdkLoaded, setIsSdkLoaded] = useState(false);
@@ -103,7 +104,8 @@ const LoginSocialFacebook = ({
         const phoneNumber = JSON.parse(
           localStorage.getItem("skipliAccount")
         ).userPhoneNumber;
-        loginFacebookApi(response.authResponse, phoneNumber);
+        console.log(response);
+        loginFacebookApi(response.authResponse, phoneNumber, socialPlatform);
 
         if (isOnlyGetToken)
           onResolve({
