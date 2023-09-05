@@ -884,6 +884,156 @@ app.get("/get-favorite-posts", async (req, res) => {
 //END Facebook API handle
 
 // START Instagram API handle
+// Create an instagram post
+
+app.post(
+  "/create-an-instagram-post",
+  upload.single("image"),
+  async (req, res) => {
+    //------
+    var userAccessToken = "";
+    var userID = "";
+    var instagramBusinessAccountId = "";
+    try {
+      const { phoneNumber } = req.body;
+      console.log("PHONE NUMBER: ", phoneNumber);
+      // Connect to firebase
+      const usersRef = doc(db, "users", phoneNumber);
+      const userSnap = await getDoc(usersRef);
+
+      try {
+        // GET userAccessToken and userID from database
+        userAccessToken = userSnap.data().instagram.auth.accessToken;
+        userID = userSnap.data().instagram.auth.userID;
+        instagramBusinessAccountId =
+          userSnap.data().instagram.auth.instagram_business_account_id;
+      } catch (err) {
+        console.log("Can not get the user auth from firebase: ", err);
+      }
+    } catch (err) {
+      console.log("Can not connect to the firebase: ", err);
+    }
+
+    // GET pageAccessToken and page ID
+    var pageAccessToken = "";
+    var facebookPageID = "";
+    var imageUrl = "";
+
+    // Get page access token and page id
+    try {
+      const pageAuthRes = await fetch(
+        `https://graph.facebook.com/${userID}/accounts?fields=access_token&access_token=${userAccessToken}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      const pageAuthData = await pageAuthRes.json();
+      pageAccessToken = pageAuthData.data[0].access_token;
+      facebookPageID = pageAuthData.data[0].id;
+    } catch (err) {
+      console.log("ERROR: Can not get pageAccessToken and page Id: ", err);
+    }
+
+    // -----
+    //1. Post to facebook with unpublish type, get the post id return. Then get the image_url by id
+    try {
+      // Extract the message and image file from the request
+      const { message } = req.body;
+      const imageFile = req.file;
+
+      // Create a FormData object to send as a multi-part request
+      const formData = new FormData();
+
+      formData.append("message", message);
+      formData.append("image", fs.createReadStream(imageFile.path));
+      formData.append("access_token", pageAccessToken);
+      formData.append("published", "false");
+
+      // Define the headers manually
+      const headers = {
+        ...formData.getHeaders(),
+      };
+      // Make a POST request to upload the image to Facebook
+      const uploadResponse = await axios.post(
+        `https://graph.facebook.com/v17.0/${facebookPageID}/photos`,
+        formData,
+        {
+          headers: headers,
+        }
+      );
+      // Respond with the Facebook post ID
+      const photoId = uploadResponse.data.id;
+      console.log("photoId", photoId);
+
+      //2. Get photo url with id return
+
+      const arrayPhotoUrlResponse = await fetch(
+        `https://graph.facebook.com/v17.0/${photoId}?fields=images&access_token=${userAccessToken}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const arrayPhotoUrl = await arrayPhotoUrlResponse.json();
+      imageUrl = arrayPhotoUrl.images[0].source;
+      // res.json(arrayPhotoUrlResponse);
+    } catch (error) {
+      // Handle errors
+      console.log(
+        "Error:",
+        error.response ? error.response.data : error.message
+      );
+    }
+
+    //2. Create a container with image
+    const message = req.body.message;
+    var containerId = "";
+    try {
+      const containerIDResponse = await fetch(
+        `https://graph.facebook.com/v17.0/${instagramBusinessAccountId}/media?access_token=${userAccessToken}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ image_url: imageUrl, caption: message }),
+        }
+      );
+
+      const containerData = await containerIDResponse.json();
+      containerId = containerData.id;
+    } catch (err) {
+      console.error("Can not create a container for this image: ", err);
+    }
+    console.log(containerId);
+    //3. Publish to instagram
+    try {
+      const instagramPostStatusResponse = await fetch(
+        `https://graph.facebook.com/v17.0/${instagramBusinessAccountId}/media_publish`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            creation_id: containerId,
+            access_token: userAccessToken,
+          }),
+        }
+      );
+      const instagramPostStatus = await instagramPostStatusResponse.json();
+      res.json(instagramPostStatus);
+    } catch (err) {
+      console.error("Can not push to instagram: ", err);
+    }
+  }
+);
 
 // Start the server
 const port = process.env.PORT || 3001;
