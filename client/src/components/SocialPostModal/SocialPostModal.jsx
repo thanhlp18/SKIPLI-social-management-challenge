@@ -11,7 +11,7 @@ import {
 import { CalendarDaysIcon } from "@heroicons/react/24/solid";
 
 import React, { Children, useEffect, useState } from "react";
-import { createFacebookPost } from "../../api/socialApi";
+import { createFacebookPost, createSocialPost } from "../../api/socialApi";
 import Aos from "aos";
 import Datetime from "react-datetime";
 import "react-datetime/css/react-datetime.css";
@@ -84,31 +84,30 @@ export function SocialPostModal() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Check if facebook is checked
+    setIsPosting(true);
+    console.log("POSTING TO FACEOOK!");
+    //CREATE A FACEBOOK POST
     if (selectSocial.facebook) {
-      setIsPosting(true);
-      console.log("POSTING TO FACEOOK!");
       try {
         // Call the API function to post to Facebook
         const phoneNumber = JSON.parse(
           localStorage.getItem("skipliAccount")
         ).userPhoneNumber;
-        const status = await createFacebookPost(
+        const status = await createSocialPost(
           image,
           message,
           phoneNumber,
           selectSocial,
           scheduleDate
         );
-        console.log(status.success);
 
         //   Show toasts
-        if (status.success) {
+        if (status.facebook.success) {
           toast.custom(
             (t) => (
               <Toast
                 type={"success"}
-                description={"Your post was posted!"}
+                description={"Your facebook post was posted!"}
                 className={`${
                   t.visible ? "animate-enter" : "animate-leave"
                 }  	m-auto box-border w-screen rounded-md shadow-sm ease-in-out lg:w-96`}
@@ -145,6 +144,7 @@ export function SocialPostModal() {
       }
     }
   };
+
   return (
     <>
       <Button className="rounded-md" onClick={handleOpen}>

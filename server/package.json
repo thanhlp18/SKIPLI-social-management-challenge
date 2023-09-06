@@ -16,6 +16,8 @@
     "fs": "^0.0.1-security",
     "mkdirp": "^3.0.1",
     "multer": "^1.4.5-lts.1",
+    "node-cron": "^3.0.2",
+    "node-schedule": "^2.1.1",
     "nodemon": "^3.0.1",
     "passport": "^0.6.0",
     "passport-facebook": "^3.0.0",

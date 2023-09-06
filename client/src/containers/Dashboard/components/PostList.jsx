@@ -12,11 +12,11 @@ import { useNavigate } from "react-router-dom";
 function PostList(props) {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
-  const [socialPosts, setSocialPost] = useState([]); // Array[{created_time,full_picture,id,isFavorite,message,permalink_url,socialID,socialName,socialPlatform....}]
-  const [initialPosts, setInitialPosts] = useState([]); // Array[{created_time,full_picture,id,isFavorite,message,permalink_url,....}]
+  const [socialPosts, setSocialPost] = useState([]); //-----> Expect: Array[{id, caption, media_url, isFavorite, timestamp, permalink},...]
+  const [initialPosts, setInitialPosts] = useState([]); //-----> Expect: Array[{id, caption, media_url, isFavorite, timestamp, permalink},...]
   const [accountList, setAccountList] = useState();
   const [filter, setFilter] = useState({ type: "", data: "" });
-
+  console.log("initial post: ", initialPosts);
   const skipliAccount = JSON.parse(localStorage.getItem("skipliAccount"));
 
   // Check whether use login skipli account, if false, navigate use to login page
@@ -44,13 +44,15 @@ function PostList(props) {
     }
   }, []);
 
-  // Get facebook post from api
+  // Get posts from api
   useEffect(() => {
     if (skipliAccount) {
+      console.log("runn");
       const fetchData = async () => {
         try {
           const response = await getPostFacebook(skipliAccount.userPhoneNumber);
-          // console.log("DATA:", response.posts);
+          console.log("DATA:", response);
+          console.log(response);
           setSocialPost(response);
           setInitialPosts(response);
           setIsLoading(false);
@@ -175,6 +177,8 @@ function PostList(props) {
     setAccountList(accountArray);
   }, [initialPosts]);
 
+  console.log(socialPosts);
+
   return (
     <div className="h-full w-full">
       <NavbarDashboard
@@ -192,30 +196,33 @@ function PostList(props) {
         </div>
       ) : (
         <div className="xs:grid-cols-1 z-0 grid  gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {socialPosts.map((post, index) => (
-            <SocialPost
-              pageData={{
-                social: post.socialPlatform,
-                socialID: post.socialID,
-                socialName: post.socialName,
-              }}
-              media={
-                post?.full_picture && (
-                  <img
-                    src={post.full_picture}
-                    // className="h-60 w-full object-cover object-center transition-all duration-300 ease-out hover:object-contain"
-                    className=" h-60 w-full object-cover object-center transition-all duration-300  ease-out  hover:bg-gray-200 hover:object-contain"
-                    alt={`${post.socialPlatform} social post`}
-                  />
-                )
-              }
-              copy={post.description || post.caption || post.message}
-              key={`social-post-${index}`}
-              handleClickFavorite={handleClickFavorite}
-              postId={post.id}
-              isFavorite={post.isFavorite}
-            />
-          ))}
+          {socialPosts.map((post, index) => {
+            //
+            console.log(post.id);
+            // <SocialPost
+            //   pageData={{
+            //     social: post.socialPlatform,
+            //     socialID: post.socialID,
+            //     socialName: post.socialName,
+            //   }}
+            //   media={
+            //     post?.media_url && (
+            //       <img
+            //         src={post.media_url}
+            //         // className="h-60 w-full object-cover object-center transition-all duration-300 ease-out hover:object-contain"
+            //         className=" h-60 w-full object-cover object-center transition-all duration-300  ease-out  hover:bg-gray-200 hover:object-contain"
+            //         alt={`${post.socialPlatform} social post`}
+            //       />
+            //     )
+            //   }
+            //   copy={post.description || post.caption || post.message}
+            //   key={`social-post-${index}`}
+            //   handleClickFavorite={handleClickFavorite}
+            //   postId={post?.id || null}
+            //   isFavorite={post .isFavorite}
+            // />
+            return <div></div>;
+          })}
         </div>
       )}
     </div>

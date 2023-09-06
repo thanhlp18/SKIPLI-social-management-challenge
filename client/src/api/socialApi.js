@@ -33,7 +33,7 @@ export const getPostFacebook = (phoneNumber) => {
   return new Promise((resolve, reject) => {
     // Create a JSON object with the phone number
 
-    fetch("http://localhost:3001/get-facebook-page-posts", {
+    fetch("http://localhost:3001/get-instagram-page-posts", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -44,7 +44,7 @@ export const getPostFacebook = (phoneNumber) => {
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
-        // response: {userData: {name, id}, posts: [{id, message, full picture, description, isFavorite},...]}
+        // response: //-----> Expect: Array[{id, caption, media_url, isFavorite, timestamp, permalink},...]
         return response.json();
       })
       .then((data) => {
@@ -57,7 +57,7 @@ export const getPostFacebook = (phoneNumber) => {
   });
 };
 
-export const createFacebookPost = async (
+export const createSocialPost = async (
   image,
   message,
   phoneNumber,
@@ -68,6 +68,9 @@ export const createFacebookPost = async (
   formData.append("message", message);
   formData.append("image", image);
   formData.append("phoneNumber", phoneNumber);
+  // CREATE POST STATUS
+  var postStatus = {};
+  // CREATE post with photo
   if (image) {
     if (scheduleDate.isScheduled)
       return {
@@ -78,41 +81,116 @@ export const createFacebookPost = async (
     console.log("RUN WITH IMAGE");
     console.log("phoneNumber: ", phoneNumber);
     console.log("message: ", message);
+    // Call api to create a facebook post
     try {
-      const response = await fetch(
-        "http://localhost:3001/create-facebook-post-with-photo",
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-      const status = await response.json();
-      return status;
+      if (selectSocial.facebook) {
+        const response = await fetch(
+          "http://localhost:3001/create-facebook-post-with-photo",
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+        const status = await response.json(); //{success: true}
+        postStatus = { ...postStatus, facebook: status };
+      }
+      // Call api to create a instagram post
+      if (selectSocial.instagram) {
+        const response = await fetch(
+          "http://localhost:3001/create-an-instagram-post",
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+        const status = await response.json();
+        return status;
+      }
+      // Call api to create a twitter post
+      // if (selectSocial.twitter) {
+      //   const response = await fetch(
+      //     "http://localhost:3001/create-facebook-post-with-photo",
+      //     {
+      //       method: "POST",
+      //       body: formData,
+      //     }
+      //   );
+      //   const status = await response.json();
+      //   return status;
+      // }
+      return postStatus;
     } catch (error) {
       console.error("Can't post the api to create the post:", error);
     }
-  } else {
+  }
+  // CREATE post WITHOUT photo
+  else {
     try {
-      const response = await fetch(
-        "http://localhost:3001/create-facebook-post",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            phoneNumber: phoneNumber,
-            message: message,
-            isScheduled: scheduleDate.isScheduled,
-            scheduledPublishTime: Math.floor(
-              scheduleDate.scheduledPublishTime / 1000
-            ),
-          }),
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      const status = await response.json();
+      // CREATE A POST IN FACEBOOK
+      if (selectSocial.facebook) {
+        const response = await fetch(
+          "http://localhost:3001/create-facebook-post",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              phoneNumber: phoneNumber,
+              message: message,
+              isScheduled: scheduleDate.isScheduled,
+              scheduledPublishTime: Math.floor(
+                scheduleDate.scheduledPublishTime / 1000
+              ),
+            }),
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        const status = await response.json();
+      }
 
-      return status;
+      // CREATE A POST IN INSTAGRAM -> Throw error, instagram required image for posting
+      // if (selectSocial.facebook) {
+      //   const response = await fetch(
+      //     "http://localhost:3001/create-facebook-post",
+      //     {
+      //       method: "POST",
+      //       body: JSON.stringify({
+      //         phoneNumber: phoneNumber,
+      //         message: message,
+      //         isScheduled: scheduleDate.isScheduled,
+      //         scheduledPublishTime: Math.floor(
+      //           scheduleDate.scheduledPublishTime / 1000
+      //         ),
+      //       }),
+      //       headers: {
+      //         "Content-Type": "application/json",
+      //       },
+      //     }
+      //   );
+      //   const status = await response.json();
+      // }
+
+      // CREATE A POST IN TWITTER
+      // if (selectSocial.facebook) {
+      //   const response = await fetch(
+      //     "http://localhost:3001/create-facebook-post",
+      //     {
+      //       method: "POST",
+      //       body: JSON.stringify({
+      //         phoneNumber: phoneNumber,
+      //         message: message,
+      //         isScheduled: scheduleDate.isScheduled,
+      //         scheduledPublishTime: Math.floor(
+      //           scheduleDate.scheduledPublishTime / 1000
+      //         ),
+      //       }),
+      //       headers: {
+      //         "Content-Type": "application/json",
+      //       },
+      //     }
+      //   );
+      //   const status = await response.json();
+      // }
     } catch (error) {
       console.error("Can't post the api to create the post:", error);
     }
