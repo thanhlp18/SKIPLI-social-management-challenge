@@ -100,9 +100,9 @@ export function SocialPostModal() {
           selectSocial,
           scheduleDate
         );
-
+        console.log("STATUS: ", status);
         //   Show toasts
-        if (status.facebook.success) {
+        if (status?.facebook?.success) {
           toast.custom(
             (t) => (
               <Toast
@@ -264,20 +264,23 @@ export function SocialPostModal() {
                         disabled: !!image,
                       }}
                       closeOnSelect={true}
+                      minDate={moment().add(20, "minutes").toDate()} // Corrected minDate setting
+                      maxDate={moment().add(28, "days").toDate()}
                       // Facebook allow user schedule post from 20 minutes to the next 28 days
                       isValidDate={(current) => {
-                        const nextDayFromNow = moment()
-                          .add(1, "day")
-                          .startOf("day"); // Start of the next day
-                        // Calculate the date 28 days from now
+                        const twentyMinutesFromNow = moment().add(
+                          20,
+                          "minutes"
+                        );
                         const twentyNineDaysFromNow = moment().add(28, "days");
+
                         // Check if the current date is within the specified range
                         return current.isBetween(
-                          nextDayFromNow,
+                          twentyMinutesFromNow,
                           twentyNineDaysFromNow,
                           null,
                           "[]"
-                        ); // Include both start and end dates
+                        );
                       }}
                       onClose={handleSelectedDate}
                     />

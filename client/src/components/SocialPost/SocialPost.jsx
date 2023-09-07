@@ -120,7 +120,7 @@ export default function SocialPost(props) {
 
     setIsStateFavorite(!isSateFavorite);
     // When click is favorite (isSateFavorite = true)
-    if (!isSateFavorite) handleClickFavorite(id, social);
+    handleClickFavorite(id, social, isSateFavorite);
   };
   return (
     // <Card className="w-full max-w-[16rem]  break-before-column rounded-none border border-gray-100 shadow-sm">

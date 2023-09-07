@@ -33,7 +33,7 @@ export const getPostFacebook = (phoneNumber) => {
   return new Promise((resolve, reject) => {
     // Create a JSON object with the phone number
 
-    fetch("http://localhost:3001/get-instagram-page-posts", {
+    fetch("http://localhost:3001/get-facebook-page-posts", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -45,10 +45,11 @@ export const getPostFacebook = (phoneNumber) => {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
         // response: //-----> Expect: Array[{id, caption, media_url, isFavorite, timestamp, permalink},...]
+
         return response.json();
       })
       .then((data) => {
-        // console.log(data);
+        console.log(data);
         resolve(data);
       })
       .catch((error) => {
@@ -68,6 +69,7 @@ export const createSocialPost = async (
   formData.append("message", message);
   formData.append("image", image);
   formData.append("phoneNumber", phoneNumber);
+  console.log(selectSocial.facebook);
   // CREATE POST STATUS
   var postStatus = {};
   // CREATE post with photo
@@ -92,7 +94,8 @@ export const createSocialPost = async (
           }
         );
         const status = await response.json(); //{success: true}
-        postStatus = { ...postStatus, facebook: status };
+        console.log("status", status);
+        postStatus = { ...postStatus, facebook: { ...status } };
       }
       // Call api to create a instagram post
       if (selectSocial.instagram) {
@@ -104,7 +107,7 @@ export const createSocialPost = async (
           }
         );
         const status = await response.json();
-        return status;
+        postStatus = { ...postStatus, instagram: { ...status } };
       }
       // Call api to create a twitter post
       // if (selectSocial.twitter) {
@@ -116,8 +119,10 @@ export const createSocialPost = async (
       //     }
       //   );
       //   const status = await response.json();
-      //   return status;
+      // postStatus = { ...postStatus, facebook: { ...status } };
+      //   return postStatus;
       // }
+      console.log(postStatus);
       return postStatus;
     } catch (error) {
       console.error("Can't post the api to create the post:", error);
@@ -146,29 +151,13 @@ export const createSocialPost = async (
           }
         );
         const status = await response.json();
+        postStatus = { ...postStatus, facebook: { ...status } };
       }
 
       // CREATE A POST IN INSTAGRAM -> Throw error, instagram required image for posting
-      // if (selectSocial.facebook) {
-      //   const response = await fetch(
-      //     "http://localhost:3001/create-facebook-post",
-      //     {
-      //       method: "POST",
-      //       body: JSON.stringify({
-      //         phoneNumber: phoneNumber,
-      //         message: message,
-      //         isScheduled: scheduleDate.isScheduled,
-      //         scheduledPublishTime: Math.floor(
-      //           scheduleDate.scheduledPublishTime / 1000
-      //         ),
-      //       }),
-      //       headers: {
-      //         "Content-Type": "application/json",
-      //       },
-      //     }
-      //   );
-      //   const status = await response.json();
-      // }
+      if (selectSocial.facebook) {
+        postStatus = { ...postStatus, instagram: false };
+      }
 
       // CREATE A POST IN TWITTER
       // if (selectSocial.facebook) {
@@ -191,13 +180,20 @@ export const createSocialPost = async (
       //   );
       //   const status = await response.json();
       // }
+
+      return postStatus;
     } catch (error) {
       console.error("Can't post the api to create the post:", error);
     }
   }
 };
 
-export const createFavoritePostApi = (phoneNumber, social, postId) => {
+export const createFavoritePostApi = (
+  phoneNumber,
+  socialPlatform,
+  postId,
+  isSateFavorite
+) => {
   fetch("http://localhost:3001/create-favorite-post", {
     method: "POST",
     headers: {
@@ -206,7 +202,8 @@ export const createFavoritePostApi = (phoneNumber, social, postId) => {
     body: JSON.stringify({
       postId: postId,
       phoneNumber: phoneNumber,
-      social: social,
+      socialPlatform: socialPlatform,
+      isSateFavorite: isSateFavorite,
     }), // Send the JSON data in the request body
   }).then((response) => {
     if (!response.ok) {
@@ -234,7 +231,11 @@ export const getSocialAccount = (phoneNumber) => {
       return response.json();
     })
     .then((data) => {
-      return data;
+      console.log(data);
+      // { facebook: { socialPlatform: "facebook",isLogin: '',userName: '',id: '',loginExpire: '',profileImage: ''},
+      // instagram: { socialPlatform: "facebook",isLogin: '',userName: '',id: '',loginExpire: '',profileImage: ''},... }
+
+      return Object.values(data);
     })
     .catch((error) => {
       // Handle errors

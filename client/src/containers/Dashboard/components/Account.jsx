@@ -18,7 +18,6 @@ import InstagramLoginBtn from "../../../components/FacebookLogin/InstagramLoginB
 export default function Account(props) {
   const { profileImage, userName, socialPlatform = "facebook" } = props;
   const [loginStatus, setLoginStatus] = useState(false);
-  console.log("login status: ", loginStatus);
   const social = {
     facebook: {
       name: "Facebook",

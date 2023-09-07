@@ -160,21 +160,21 @@ app.post("/get-social-accounts", async (req, res) => {
       var facebookAccount = docSnap.data().facebook;
       var instagramAccount = docSnap.data().instagram;
       var twitterAccount = docSnap.data().twitter;
-      console.log(accountsData.facebook);
       try {
         // Get facebook data from firebase
         const facebookAccountAuth = facebookAccount.auth;
         // Get server time to check is account token expired
         const serverTime = Timestamp.fromDate(new Date()).seconds;
+
         const accountExpireTime =
           facebookAccountAuth.data_access_expiration_time;
 
         // Check expired login time of use
         if (serverTime < accountExpireTime) {
-          console.log(serverTime < accountExpireTime);
           accountsData = {
             ...accountsData,
             facebook: {
+              ...accountsData.facebook,
               isLogin: true,
               userName: "",
               id: facebookAccountAuth.userID,
@@ -188,7 +188,7 @@ app.post("/get-social-accounts", async (req, res) => {
 
         try {
           const userPublicInformationRes = await fetch(
-            `https://graph.facebook.com/v17.0/me?fields=id%2Cname%2Cpicture&access_token=${facebookAccountAuth.accessToken}`
+            `https://graph.facebook.com/v17.0/me?fields=id,name,picture&access_token=${facebookAccountAuth.accessToken}`
           );
 
           const userPublicInformation = await userPublicInformationRes.json();
@@ -220,7 +220,8 @@ app.post("/get-social-accounts", async (req, res) => {
         if (serverTime < accountExpireTime) {
           accountsData = {
             ...accountsData,
-            facebook: {
+            instagram: {
+              ...accountsData.instagram,
               isLogin: true,
               userName: "",
               id: instagramAccountAuth.userID,
@@ -243,7 +244,8 @@ app.post("/get-social-accounts", async (req, res) => {
         if (serverTime < accountExpireTime) {
           accountsData = {
             ...accountsData,
-            facebook: {
+            twitter: {
+              ...accountsData.twitter,
               isLogin: true,
               userName: "",
               id: twitterAccountAuth.userID,
@@ -258,8 +260,7 @@ app.post("/get-social-accounts", async (req, res) => {
     } else {
       throw Error("Phon number isn't valid!");
     }
-
-    res.json(Object.values(accountsData));
+    res.json(accountsData);
   } catch (e) {
     console.error("Can't get social account data: ", e);
   }
@@ -474,7 +475,6 @@ app.post("/login-meta", async (req, res) => {
     } catch (err) {
       console.error("Can not find instagram id: ", err);
     }
-    res.json({ success: true }); // Send the status back to the client
   }
 });
 
@@ -633,7 +633,6 @@ app.post(
         }
       );
       // Respond with the {status: true}
-      console.log(uploadResponse);
       res.json({ success: true });
     } catch (error) {
       // Handle errors
@@ -725,18 +724,15 @@ app.post("/get-facebook-page-posts", async (req, res) => {
   const userSnap = await getDoc(usersRef);
 
   // Initial variable
-  var pagePostData = [];
-  var favoritePostData = [];
+  var postData = []; //[{caption: ' ', createTime: '', id: ''.,isFavorite:'',mediaUrl:'', permalink: '', socialPlatform: ''}  ..]
+  var favoritePostData = {}; //[facebook: [id1, id2, id3], instagram: [id1, id2, id3], ...]
   var userData = [];
-  var userAccessToken = "";
-  var userID = "";
-  var pageData = { name: "", access_token: "", id: "" };
 
-  // A function to check wherether the post is user's favorite, if favorite add ? {isFavorite: true} {isFavorite: false}
+  // A function to check whether the post is user's favorite, if favorite add ? {isFavorite: true} {isFavorite: false}
   function addIsFavoriteProperty(arrayA, arrayB) {
     const idSetB = new Set(arrayB);
     for (const obj of arrayA) {
-      if (idSetB.has(obj.id)) {
+      if (idSetB.has(`${obj.socialPlatform}_${obj.id}`)) {
         obj.isFavorite = true;
       } else {
         obj.isFavorite = false;
@@ -744,128 +740,331 @@ app.post("/get-facebook-page-posts", async (req, res) => {
     }
   }
 
-  // Connect to firebase
+  // 2. GET FAVORITE POST ID //{socialPlatform_id1, socialPlatform_id1,...}
   try {
-    userAccessToken = userSnap.data().facebook.auth.accessToken;
-    userID = userSnap.data().facebook.auth.userID;
-  } catch (err) {
-    console.error("Fail to connect the database: ", err);
-  }
-
-  // GET favorite post id
-  try {
-    const social = "facebook";
     if (userSnap.exists()) {
-      favoritePostData = await userSnap.data()[social].favorite_social_post;
-      if (!favoritePostData) favoritePostData = [];
+      if (userSnap.data().favorite_social_post) {
+        favoritePostData = userSnap.data().favorite_social_post;
+      }
     }
   } catch (error) {
     console.log("Can't get favorite posts from server: ", error);
   }
+  // console.log("favoritePostData: ", favoritePostData);
 
-  // GET page access token
-  try {
-    const response = await fetch(
-      `https://graph.facebook.com/${userID}/accounts?fields=name,access_token&access_token=${userAccessToken}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
+  // 3. GET POST DATA
+  if (userSnap.exists()) {
+    var facebookAccount = userSnap.data().facebook;
+    var instagramAccount = userSnap.data().instagram;
+    var twitterAccount = userSnap.data().twitter;
+    //GET FACEBOOK POST DATA
+    try {
+      var facebookPostData = [];
+
+      // 3.1 Get facebook auth data from firebase
+      const facebookAccountAuth = facebookAccount.auth;
+      const accountExpireTime = facebookAccountAuth.data_access_expiration_time;
+      // 3.2 Get server time to check is account token expired
+      const serverTime = Timestamp.fromDate(new Date()).seconds;
+
+      // 3.3 Check expired login time of use and start to get facebook post
+      if (serverTime < accountExpireTime) {
+        //a. GET page data
+        let pageData = {
+          socialPlatform: "facebook",
+          socialName: "",
+          access_token: "",
+          socialID: "", //socailID: pageID
+          page_profile_picture_url: "",
+        };
+        try {
+          const response = await fetch(
+            `https://graph.facebook.com/${facebookAccountAuth.userID}/accounts?fields=name,access_token,picture{url}&access_token=${facebookAccountAuth.accessToken}`,
+            {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }
+          );
+          const res = await response.json();
+          pageData = {
+            socialPlatform: "facebook",
+            socialName: res.data[0].name,
+            access_token: res.data[0].access_token,
+            socialID: res.data[0].id,
+            page_profile_picture_url: res.data[0].picture.data.url,
+          };
+        } catch (e) {
+          console.error("Error get page access token: ", error);
+        }
+
+        //b. GET page post
+        try {
+          const response = await fetch(
+            `https://graph.facebook.com/${pageData.socialID}/feed?fields=message,created_time,id,permalink_url,full_picture&access_token=${pageData.access_token}`,
+            {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }
+          );
+          const res = await response.json();
+
+          //Array[{id, message, full picture, isFavorite, created_time, permalink_url},...]
+          //-----> Expect: Array[{socialPlatform, socialID ,id ,socialName ,page_profile_img_url ,caption, media_url, isFavorite, timestamp, permalink},...]
+          res.data.map((ele, index) => {
+            facebookPostData.push({
+              socialPlatform: pageData.socialPlatform,
+              socialID: pageData.socialID,
+              socialName: pageData.socialName,
+              pageProfilePictureUrl: pageData.page_profile_picture_url,
+              id: ele.id,
+              caption: ele.message ? ele.message : "",
+              mediaUrl: ele.full_picture ? ele.full_picture : "",
+              createTime: ele.created_time ? ele.created_time : "",
+              permalink: ele.permalink_url ? ele.permalink_url : "",
+              isFavorite: "false",
+            });
+          });
+        } catch (e) {
+          console.log("Can't get facebook posts: ", error);
+        }
+
+        //c. Check favorite with platform post id
+        addIsFavoriteProperty(facebookPostData, favoritePostData);
+        postData.push(...facebookPostData);
+      } else {
+        console.log("Facebook login session is expired!");
       }
-    );
+    } catch (error) {
+      console.error("User does not login to facebook account!");
+    }
 
-    const res = await response.json();
-    pageData = {
-      name: res.data[0].name,
-      access_token: res.data[0].access_token,
-      id: res.data[0].id,
-    };
-  } catch (e) {
-    console.error("Error get page access token: ", error);
-  }
+    //GET INSTAGRAM POST DATA
+    try {
+      // 3.1 Get facebook auth data from firebase
+      const instagramAccountAuth = instagramAccount.auth;
+      const accountExpireTime =
+        instagramAccountAuth.data_access_expiration_time;
 
-  // GET page posts
-  try {
-    const response = await fetch(
-      `https://graph.facebook.com/${pageData.id}/feed?fields=message,created_time,id,permalink_url,full_picture&access_token=${pageData.access_token}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
+      // 3.2 Get server time to check is account token expired
+      const serverTime = Timestamp.fromDate(new Date()).seconds;
+
+      // 3.3 Check expired login time of use and start to get facebook post
+      if (serverTime < accountExpireTime) {
+        //a. GET page data
+
+        // Connect to firebase
+        var pageData = {
+          socialPlatform: "instagram",
+          socialName: "",
+          access_token: "",
+          socialID: "", //socialID: instagramBusinessAccountId
+          page_profile_picture_url: "",
+        };
+        var instagramPostData = [];
+        try {
+          const access_token = userSnap.data().instagram.auth.accessToken;
+          const socialID =
+            userSnap.data().instagram.auth.instagram_business_account_id; //instagram_Business_Account_Id
+
+          try {
+            const instagramProfileRes = await fetch(
+              `https://graph.facebook.com/v17.0/${socialID}?fields=profile_picture_url,username&access_token=${access_token}`
+            );
+            const instagramProfile = await instagramProfileRes.json();
+            pageData = {
+              ...pageData,
+              socialName: instagramProfile.username,
+              access_token: access_token,
+              socialID: socialID, //socailID: pageID
+              page_profile_picture_url: instagramProfile.profile_picture_url,
+            };
+          } catch (err) {
+            console.log(
+              "Can't get instagram user name and profile picture url: ",
+              err
+            );
+          }
+        } catch (err) {
+          console.error(
+            "Fail to connect the database and get instagram data from database: ",
+            err
+          );
+        }
+
+        //b. GET page post
+        try {
+          const instagramPostsRes = await fetch(
+            `https://graph.facebook.com/v17.0/${pageData.socialID}/media?fields=caption,id,timestamp,media_url,permalink&access_token=${pageData.access_token}`,
+            {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          //Array[{id, caption, media_url, isFavorite, timestamp, permalink_url},...]
+          //Array[{caption: ' ', created_time: '', id: ''.,isFavorite:'',mediaUrl:'', permalink: '', socialPlatform: '', socialID: '',socialName: "", }  ..]
+          const instagramPosts = await instagramPostsRes.json();
+          let instagramPostDataTemp = instagramPosts.data;
+          instagramPostDataTemp.map((post, idx) => {
+            instagramPostData.push({
+              socialPlatform: "instagram",
+              socialID: pageData.socialID,
+              socialName: pageData.socialName,
+              pageProfilePictureUrl: pageData.page_profile_picture_url,
+              caption: post.caption || "",
+              createTime: post.timestamp,
+              id: post.id,
+              isFavorite: "false",
+              mediaUrl: post.media_url,
+              permalink: post.permalink,
+            });
+          });
+        } catch (e) {
+          console.log("Error get  instagram posts: ", error);
+        }
+
+        //c. Check favorite with platform post id
+        addIsFavoriteProperty(instagramPostData, favoritePostData);
+        console.log(instagramPostData);
+        postData.push(...instagramPostData);
+      } else {
+        console.log("Facebook login session is expired!");
       }
-    );
-    //Array[{id, message, full picture, isFavorite, created_time, permalink_url},...]
-    //-----> Expect: Array[{id, caption, media_url, isFavorite, timestamp, permalink},...]
-    const res = await response.json();
-    pagePostData = [];
-    console.log(res);
-    res.data.map((ele, index) => {
-      console.log(index);
-      pagePostData.push({
-        id: ele.id,
-        caption: ele.message ? ele.message : "",
-        media_url: ele.full_picture ? ele.full_picture : "",
-        created_time: ele.created_time ? ele.created_time : "",
-        permalink: ele.permalink_url ? ele.permalink_url : "",
-        isFavorite: "false",
-      });
-    });
-  } catch (e) {
-    console.log("Error get page post: ", error);
+    } catch (error) {
+      console.error("User does not login to facebook account!");
+    }
+    // console.log("instagramPostDataTemp: ", postData);
+    // try {
+    //   const instagramAccountAuth = instagramAccount.auth;
+    //   // Get server time to check is account token expired
+    //   const serverTime = Timestamp.fromDate(new Date()).seconds;
+    //   const accountExpireTime =
+    //     instagramAccountAuth.data_access_expiration_time;
+
+    //   // Check expired login time of use
+    //   if (serverTime < accountExpireTime) {
+    //     accountsData = {
+    //       ...accountsData,
+    //       instagram: {
+    //         ...accountsData.instagram,
+    //         isLogin: true,
+    //         userName: "",
+    //         id: instagramAccountAuth.userID,
+    //         loginExpire: instagramAccountAuth.data_access_expiration_time,
+    //         profileImage: "",
+    //       },
+    //     };
+    //   }
+    // } catch (error) {
+    //   console.error("User does not login to instagram account!");
+    // }
+    // try {
+    //   const twitterAccountAuth = twitterAccount.auth;
+    //   // Get server time to check is account token expired
+    //   const serverTime = Timestamp.fromDate(new Date()).seconds;
+    //   const accountExpireTime = twitterAccountAuth.data_access_expiration_time;
+
+    //   // Check expired login time of use
+    //   if (serverTime < accountExpireTime) {
+    //     accountsData = {
+    //       ...accountsData,
+    //       twitter: {
+    //         ...accountsData.twitter,
+    //         isLogin: true,
+    //         userName: "",
+    //         id: twitterAccountAuth.userID,
+    //         loginExpire: twitterAccountAuth.data_access_expiration_time,
+    //         profileImage: "",
+    //       },
+    //     };
+    //   }
+    // } catch (error) {
+    //   console.error("User does not login to twitter account!");
+    // }
+
+    //[{caption: ' ', created_time: '', id: ''.,isFavorite:'',media_url:'', permalink: '', socialPlatform: ''}  ..]
+    res.json(postData);
+  } else {
+    console.log("Phon number isn't valid!");
   }
 
-  // ADD isFavorite property to post
-  try {
-    addIsFavoriteProperty(pagePostData, favoritePostData);
-    const postReturn = pagePostData.map((post, index) => ({
-      ...post,
-      socialID: pageData.id,
-      socialName: pageData.name,
-      socialPlatform: "facebook",
-    }));
-    res.json(postReturn); //Array[{id, message, full picture, description, isFavorite},...]
-  } catch (error) {
-    console.log("Can' add favorite property: ", error);
-  }
+  // 5. ADD isFavorite property to post
+  // try {
+  //   addIsFavoriteProperty(pagePostData, favoritePostData);
+  //   const postReturn = pagePostData.map((post, index) => ({
+  //     ...post,
+  //     socialID: pageData.id,
+  //     socialName: pageData.name,
+  //     socialPlatform: "facebook",
+  //   }));
+  //   res.json(postReturn); //Array[{id, message, full picture, description, isFavorite},...]
+  // } catch (error) {
+  //   console.log("Can' add favorite property: ", error);
+  // }
 });
 
 // CREATE the favorite post
 app.post("/create-favorite-post", async (req, res) => {
   const phoneNumber = req.body.phoneNumber;
   const postId = req.body.postId;
-  const social = req.body.social;
+  const socialPlatform = req.body.socialPlatform;
+  const isSateFavorite = req.body.isSateFavorite;
+
   console.log("PHONE NUMBER: ", phoneNumber);
   console.log("postId: ", postId);
-  console.log("social: ", social);
+  console.log("social: ", socialPlatform);
   // Update the favorite post in database
   try {
+    // Connect to database
     const usersRef = doc(db, "users", phoneNumber);
     const docSnap = await getDoc(usersRef);
 
-    const socialData = docSnap.data()[social];
-    const favoritePostData = socialData.favorite_social_post;
-    console.log("UPDATE NEW FAVORITE POST------");
-    if (favoritePostData) {
-      updateDoc(usersRef, {
-        [social]: {
-          ...socialData,
-          favorite_social_post: [...favoritePostData, postId],
-        },
-      });
-    } else {
-      updateDoc(usersRef, {
-        [social]: {
-          ...socialData,
-          favorite_social_post: [postId],
-        },
-      });
-    }
+    const favoritePostData = docSnap.data().favorite_social_post;
 
+    try {
+      if (favoritePostData) {
+        // isSateFavorite = true, meaning user want to delete the favorite status
+        if (isSateFavorite) {
+          try {
+            const newFavoriteSocialPost = favoritePostData.filter(
+              (item) => item !== `${socialPlatform}_${postId}`
+            );
+            updateDoc(usersRef, {
+              favorite_social_post: newFavoriteSocialPost,
+            });
+            console.log("REMOVE THE FAVORITE POST: ", postId);
+          } catch (err) {
+            console.log("Can't remove the favorite post: ", err);
+          }
+        } else {
+          try {
+            updateDoc(usersRef, {
+              favorite_social_post: [
+                ...favoritePostData,
+                `${socialPlatform}_${postId}`,
+              ],
+            });
+          } catch (err) {
+            console.log("Can't add favorite post: ", err);
+          }
+        }
+      } else {
+        updateDoc(usersRef, {
+          favorite_social_post: [`${socialPlatform}_${postId}`],
+        });
+      }
+    } catch (err) {
+      console.log("Can't update the favorite post!: ", err);
+    }
     res.json({ success: true });
   } catch (e) {
-    console.error("Error adding document: ", e);
+    console.error("Can't connect to database: ", e);
   }
 });
 
@@ -1201,11 +1400,16 @@ app.post(
       }
     };
 
+    res.json({
+      success: true,
+      message: `Your post was schedule at ${targetDate}`,
+    });
+
     //c.  Schedule the instagram post process in our server with process and schedule date
     try {
       const targetDate = new Date(scheduleDate);
       const job = schedule.scheduleJob(targetDate, () => {
-        console.log(`Scheduled API call at ${new Date().toLocaleString()}`);
+        console.log(`Scheduled API call at ${targetDate}`);
         createAnInstagramPost();
       });
     } catch (err) {

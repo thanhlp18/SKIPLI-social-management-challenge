@@ -12,8 +12,8 @@ import { useNavigate } from "react-router-dom";
 function PostList(props) {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
-  const [socialPosts, setSocialPost] = useState([]); //-----> Expect: Array[{id, caption, media_url, isFavorite, timestamp, permalink},...]
-  const [initialPosts, setInitialPosts] = useState([]); //-----> Expect: Array[{id, caption, media_url, isFavorite, timestamp, permalink},...]
+  const [socialPosts, setSocialPost] = useState([]); //-----> Expect: Array[{id, caption, mediaUrl, isFavorite, timestamp, permalink},...]
+  const [initialPosts, setInitialPosts] = useState([]); //-----> Expect: Array[{id, caption, mediaUrl, isFavorite, timestamp, permalink},...]
   const [accountList, setAccountList] = useState();
   const [filter, setFilter] = useState({ type: "", data: "" });
   console.log("initial post: ", initialPosts);
@@ -78,9 +78,9 @@ function PostList(props) {
 
             return socialPostArray.filter((post) => {
               console.log(post);
-              if (post.message) {
-                const postMessage = post.message.toLowerCase();
-                return postMessage.includes(searchTerm);
+              if (post.caption) {
+                const postCaption = post.caption.toLowerCase();
+                return postCaption.includes(searchTerm);
               }
 
               return false;
@@ -94,7 +94,7 @@ function PostList(props) {
           function filterByDateRange(socialPostArray, startDate, endDate) {
             console.log("socialPostArray: ", socialPostArray);
             return socialPostArray.filter((post) => {
-              const postDate = new Date(post.created_time);
+              const postDate = new Date(post.createTime);
               const start = startDate ? new Date(startDate) : null;
               const end = endDate ? new Date(endDate) : null;
 
@@ -157,8 +157,13 @@ function PostList(props) {
   }, [filter]);
 
   // Add post to favortie
-  const handleClickFavorite = (id, social) => {
-    createFavoritePostApi(skipliAccount.userPhoneNumber, social, id);
+  const handleClickFavorite = (id, socialPlatform, isSateFavorite) => {
+    createFavoritePostApi(
+      skipliAccount.userPhoneNumber,
+      socialPlatform,
+      id,
+      isSateFavorite
+    );
   };
 
   // Get social account
@@ -197,31 +202,30 @@ function PostList(props) {
       ) : (
         <div className="xs:grid-cols-1 z-0 grid  gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {socialPosts.map((post, index) => {
-            //
-            console.log(post.id);
-            // <SocialPost
-            //   pageData={{
-            //     social: post.socialPlatform,
-            //     socialID: post.socialID,
-            //     socialName: post.socialName,
-            //   }}
-            //   media={
-            //     post?.media_url && (
-            //       <img
-            //         src={post.media_url}
-            //         // className="h-60 w-full object-cover object-center transition-all duration-300 ease-out hover:object-contain"
-            //         className=" h-60 w-full object-cover object-center transition-all duration-300  ease-out  hover:bg-gray-200 hover:object-contain"
-            //         alt={`${post.socialPlatform} social post`}
-            //       />
-            //     )
-            //   }
-            //   copy={post.description || post.caption || post.message}
-            //   key={`social-post-${index}`}
-            //   handleClickFavorite={handleClickFavorite}
-            //   postId={post?.id || null}
-            //   isFavorite={post .isFavorite}
-            // />
-            return <div></div>;
+            return (
+              <SocialPost
+                key={`social-post-${index}`}
+                pageData={{
+                  social: post.socialPlatform,
+                  socialID: post.socialID,
+                  socialName: post.socialName,
+                }}
+                media={
+                  post?.mediaUrl && (
+                    <img
+                      src={post.mediaUrl}
+                      // className="h-60 w-full object-cover object-center transition-all duration-300 ease-out hover:object-contain"
+                      className=" h-60 w-full object-cover object-center transition-all duration-300  ease-out  hover:bg-gray-200 hover:object-contain"
+                      alt={`${post.socialPlatform} social post`}
+                    />
+                  )
+                }
+                copy={post.description || post.caption || post.message}
+                handleClickFavorite={handleClickFavorite}
+                postId={post?.id || null}
+                isFavorite={post.isFavorite}
+              />
+            );
           })}
         </div>
       )}
